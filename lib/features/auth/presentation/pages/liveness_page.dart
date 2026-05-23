@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/app_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/scanner_overlay.dart';
 
@@ -169,6 +170,8 @@ class _LivenessPageState extends State<LivenessPage> {
                 ),
               ),
               onPressed: () {
+                // Set verified state
+                AppState().isVerified = true;
                 // Pop back to home
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },

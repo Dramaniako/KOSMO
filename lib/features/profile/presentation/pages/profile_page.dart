@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/app_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -49,7 +51,15 @@ class ProfilePage extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sistem akan melakukan Logout...')),
+                        const SnackBar(
+                          content: Text('Logout berhasil.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        (route) => false,
                       );
                     },
                     style: OutlinedButton.styleFrom(
@@ -127,28 +137,38 @@ class ProfilePage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         // KYC Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.secondary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.verified_user_rounded, color: AppColors.secondary, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'Akun Terverifikasi',
-                style: TextStyle(
-                  color: AppColors.secondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+        ValueListenableBuilder<bool>(
+          valueListenable: AppState().isVerifiedNotifier,
+          builder: (context, isVerified, child) {
+            final badgeColor = isVerified ? AppColors.secondary : AppColors.textSecondary;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isVerified ? Icons.verified_user_rounded : Icons.info_outline_rounded,
+                    color: badgeColor,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isVerified ? 'Akun Terverifikasi' : 'Belum Terverifikasi',
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );

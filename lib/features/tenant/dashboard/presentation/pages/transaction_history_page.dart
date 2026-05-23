@@ -13,6 +13,7 @@ class TransactionHistoryPage extends StatelessWidget {
         title: const Text('Riwayat Tagihan', style: TextStyle(color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         elevation: 1,
+        automaticallyImplyLeading: Navigator.canPop(context),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(

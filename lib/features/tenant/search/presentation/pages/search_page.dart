@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../booking/presentation/pages/contract_review_page.dart';
 import '../widgets/property_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
 
@@ -15,6 +16,8 @@ class _SearchPageState extends State<SearchPage> {
 
   final List<Map<String, dynamic>> _mockProperties = [
     {
+      'imageUrl':
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
       'title': 'Kos Eksklusif Mawar',
       'location': 'Jakarta Selatan',
       'price': 2500000.0,
@@ -22,6 +25,8 @@ class _SearchPageState extends State<SearchPage> {
       'isAllInclusive': true,
     },
     {
+      'imageUrl':
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
       'title': 'Kos Mahasiswa UI',
       'location': 'Depok',
       'price': 1500000.0,
@@ -29,6 +34,8 @@ class _SearchPageState extends State<SearchPage> {
       'isAllInclusive': false,
     },
     {
+      'imageUrl':
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
       'title': 'Premium Residence',
       'location': 'Jakarta Pusat',
       'price': 4500000.0,
@@ -140,12 +147,20 @@ class _SearchPageState extends State<SearchPage> {
       itemBuilder: (context, index) {
         final prop = _mockProperties[index];
         return PropertyCard(
-          imageUrl: '', // Mocked internally
+          imageUrl: prop['imageUrl'],
           title: prop['title'],
           location: prop['location'],
           price: prop['price'],
           rating: prop['rating'],
           isAllInclusive: prop['isAllInclusive'],
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ContractReviewPage(),
+              ),
+            );
+          },
         );
       },
     );
@@ -185,12 +200,20 @@ class _SearchPageState extends State<SearchPage> {
                 SizedBox(
                   width: 280,
                   child: PropertyCard(
-                    imageUrl: '',
+                    imageUrl: 'imageUrl',
                     title: 'Premium Residence',
                     location: 'Jakarta Pusat',
                     price: 4500000.0,
                     rating: 4.9,
                     isAllInclusive: true,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ContractReviewPage(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

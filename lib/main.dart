@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_colors.dart';
-import 'features/home/presentation/home_page.dart';
+import 'features/auth/presentation/pages/login_page.dart';
 
 void main() {
   runApp(const KosmoApp());
@@ -28,7 +28,7 @@ class KosmoApp extends StatelessWidget {
         fontFamily:
             'Inter', // Default to Inter if added to pubspec, otherwise falls back gracefully
       ),
-      home: const HomePage(),
+      home: const LoginPage(),
     );
   }
 }
