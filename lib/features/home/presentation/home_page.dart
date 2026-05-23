@@ -91,7 +91,11 @@ class HomePage extends StatelessWidget {
                 child: const CircleAvatar(
                   radius: 26,
                   backgroundColor: AppColors.surface,
-                  child: Icon(Icons.person_rounded, color: AppColors.textSecondary, size: 30),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: AppColors.textSecondary,
+                    size: 30,
+                  ),
                 ),
               ),
             ),
@@ -129,7 +133,10 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.secondary.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
@@ -137,11 +144,19 @@ class HomePage extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle_rounded, color: Colors.white, size: 12),
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Sewa Aktif',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -162,7 +177,11 @@ class HomePage extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.apartment_rounded, color: AppColors.primary, size: 28),
+                    child: const Icon(
+                      Icons.apartment_rounded,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
@@ -171,7 +190,11 @@ class HomePage extends StatelessWidget {
                       children: [
                         Text(
                           'Premium Residence',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         SizedBox(height: 2),
                         Text(
@@ -187,9 +210,19 @@ class HomePage extends StatelessWidget {
               Row(
                 children: [
                   _buildMiniKosStat('Sewa Ke', '3/12'),
-                  Container(height: 30, width: 1, color: Colors.white30, margin: const EdgeInsets.symmetric(horizontal: 12)),
+                  Container(
+                    height: 30,
+                    width: 1,
+                    color: Colors.white30,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
                   _buildMiniKosStat('Sisa Hari', '20 Hari'),
-                  Container(height: 30, width: 1, color: Colors.white30, margin: const EdgeInsets.symmetric(horizontal: 12)),
+                  Container(
+                    height: 30,
+                    width: 1,
+                    color: Colors.white30,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
                   _buildMiniKosStat('Tagihan', 'Lunas'),
                 ],
               ),
@@ -205,9 +238,19 @@ class HomePage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -254,52 +297,55 @@ class HomePage extends StatelessWidget {
         crossAxisSpacing: 16,
         childAspectRatio: 0.8, // Adjusted for slightly taller cards
       ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final feature = features[index];
-          return FeatureCard(
-            title: feature['title'] as String,
-            subtitle: feature['subtitle'] as String,
-            icon: feature['icon'] as IconData,
-            onTap: () {
-              if (feature['route'] == '/kyc') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const KycIntroPage()),
-                );
-              } else if (feature['route'] == '/search') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SearchPage()),
-                );
-              } else if (feature['route'] == '/contract') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ContractReviewPage()),
-                );
-              } else if (feature['route'] == '/landlord-dashboard') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LandlordDashboardPage()),
-                );
-              } else if (feature['route'] == '/transactions') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TransactionHistoryPage()),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Navigasi ke ${feature['title']}'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
-          );
-        },
-        childCount: features.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final feature = features[index];
+        return FeatureCard(
+          title: feature['title'] as String,
+          subtitle: feature['subtitle'] as String,
+          icon: feature['icon'] as IconData,
+          onTap: () {
+            if (feature['route'] == '/kyc') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const KycIntroPage()),
+              );
+            } else if (feature['route'] == '/search') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            } else if (feature['route'] == '/contract') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ContractReviewPage(),
+                ),
+              );
+            } else if (feature['route'] == '/landlord-dashboard') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LandlordDashboardPage(),
+                ),
+              );
+            } else if (feature['route'] == '/transactions') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TransactionHistoryPage(),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Navigasi ke ${feature['title']}'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+        );
+      }, childCount: features.length),
     );
   }
 }

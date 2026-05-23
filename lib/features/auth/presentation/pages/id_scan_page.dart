@@ -31,10 +31,10 @@ class IdScanPage extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Scanner Overlay Frame
           const ScannerOverlay(shape: OverlayShape.rectangle),
-          
+
           // Instructions
           SafeArea(
             child: Column(
@@ -49,36 +49,36 @@ class IdScanPage extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      shadows: [
-                        Shadow(color: Colors.black87, blurRadius: 4),
-                      ],
+                      shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
                     ),
                   ),
                 ),
-                
+
                 // Capture Button
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      // Simulating capture and proceed
-                      _showSuccessDialog(context);
-                    },
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.transparent,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        // Simulating capture and proceed
+                        _showSuccessDialog(context);
+                      },
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.transparent,
+                          border: Border.all(color: Colors.white, width: 4),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -99,7 +99,11 @@ class IdScanPage extends StatelessWidget {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 64),
+        title: const Icon(
+          Icons.check_circle_rounded,
+          color: AppColors.secondary,
+          size: 64,
+        ),
         content: const Text(
           'KTP berhasil dipindai!',
           textAlign: TextAlign.center,
@@ -111,7 +115,9 @@ class IdScanPage extends StatelessWidget {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () {
                 Navigator.pop(context); // close dialog
@@ -120,9 +126,12 @@ class IdScanPage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const LivenessPage()),
                 );
               },
-              child: const Text('Lanjut', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Lanjut',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
