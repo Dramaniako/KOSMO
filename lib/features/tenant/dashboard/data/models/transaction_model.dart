@@ -1,0 +1,65 @@
+import '../../presentation/widgets/transaction_card.dart';
+
+class TransactionModel {
+  final String date;
+  final String invoiceNumber;
+  final double amount;
+  final TransactionStatus status;
+  final String propertyName;
+
+  const TransactionModel({
+    required this.date,
+    required this.invoiceNumber,
+    required this.amount,
+    required this.status,
+    required this.propertyName,
+  });
+
+  factory TransactionModel.fromJson(Map<String, dynamic> json) {
+    final statusStr = json['status'] as String;
+    TransactionStatus status;
+    switch (statusStr) {
+      case 'success':
+        status = TransactionStatus.success;
+        break;
+      case 'failed':
+        status = TransactionStatus.failed;
+        break;
+      case 'pending':
+      default:
+        status = TransactionStatus.pending;
+        break;
+    }
+
+    return TransactionModel(
+      date: json['date'] as String,
+      invoiceNumber: json['invoiceNumber'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      status: status,
+      propertyName: json['propertyName'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    String statusStr;
+    switch (status) {
+      case TransactionStatus.success:
+        statusStr = 'success';
+        break;
+      case TransactionStatus.failed:
+        statusStr = 'failed';
+        break;
+      case TransactionStatus.pending:
+        statusStr = 'pending';
+        break;
+    }
+
+    return {
+      'date': date,
+      'invoiceNumber': invoiceNumber,
+      'amount': amount,
+      'status': statusStr,
+      'propertyName': propertyName,
+    };
+  }
+}

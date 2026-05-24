@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/app_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -22,7 +24,7 @@ class ProfilePage extends StatelessWidget {
             children: [
               const SizedBox(height: 32),
               // Profile Header
-              _buildProfileHeader(),
+              _buildProfileHeader(ref.watch(authProvider).user),
               const SizedBox(height: 32),
               
               // Menu Sections
@@ -50,6 +52,7 @@ class ProfilePage extends StatelessWidget {
                   height: 56,
                   child: OutlinedButton(
                     onPressed: () {
+                      ref.read(authProvider.notifier).logout();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Logout berhasil.'),
@@ -79,7 +82,12 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(UserEntity? user) {
+    final name = user?.name ?? 'Budi Santoso';
+    final email = user?.email ?? 'budi.santoso@email.com';
+    final isVerified = user?.isVerified ?? false;
+    final badgeColor = isVerified ? AppColors.secondary : AppColors.textSecondary;
+
     return Column(
       children: [
         // Avatar
@@ -118,9 +126,9 @@ class ProfilePage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         // Name and Email
-        const Text(
-          'Budi Santoso',
-          style: TextStyle(
+        Text(
+          name,
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -128,47 +136,41 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'budi.santoso@email.com • +62 812-3456-7890',
-          style: TextStyle(
+        Text(
+          '$email • +62 812-3456-7890',
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 12),
         // KYC Badge
-        ValueListenableBuilder<bool>(
-          valueListenable: AppState().isVerifiedNotifier,
-          builder: (context, isVerified, child) {
-            final badgeColor = isVerified ? AppColors.secondary : AppColors.textSecondary;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: badgeColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: badgeColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isVerified ? Icons.verified_user_rounded : Icons.info_outline_rounded,
+                color: badgeColor,
+                size: 16,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isVerified ? Icons.verified_user_rounded : Icons.info_outline_rounded,
-                    color: badgeColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isVerified ? 'Akun Terverifikasi' : 'Belum Terverifikasi',
-                    style: TextStyle(
-                      color: badgeColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 6),
+              Text(
+                isVerified ? 'Akun Terverifikasi' : 'Belum Terverifikasi',
+                style: TextStyle(
+                  color: badgeColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ],
     );

@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../properties/presentation/widgets/landlord_property_card.dart';
+import '../providers/landlord_provider.dart';
+import '../../data/models/landlord_stats_model.dart';
 
-class LandlordDashboardPage extends StatelessWidget {
+class LandlordDashboardPage extends ConsumerWidget {
   const LandlordDashboardPage({super.key});
 
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return 'Rp ${buffer.toString()}';
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final landlordState = ref.watch(landlordProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -19,95 +36,108 @@ class LandlordDashboardPage extends StatelessWidget {
         automaticallyImplyLeading: Navigator.canPop(context),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStatsCard(context),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: landlordState.when(
+        data: (stats) {
+          return SafeArea(
+            child: RefreshIndicator(
+              onRefresh: () => ref.refresh(landlordProvider.future),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Properti Anda',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    _buildStatsCard(context, stats),
+
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Properti Anda',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Fitur tambah properti akan segera hadir'),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: const Text('Tambah'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('Tambah'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                      ),
-                    ),
+
+                    if (stats.properties.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Text(
+                            'Tidak ada properti yang dikelola.',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      )
+                    else
+                      ...stats.properties.map((p) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: LandlordPropertyCard(
+                              title: p.title,
+                              address: p.address,
+                              totalRooms: p.totalRooms,
+                              occupiedRooms: p.occupiedRooms,
+                              imageUrl: p.imageUrl,
+                            ),
+                          )),
+
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: LandlordPropertyCard(
-                  title: 'Premium Residence',
-                  address: 'Jl. Merdeka No. 45, Jakarta Selatan',
-                  totalRooms: 10,
-                  occupiedRooms: 8,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
+            ),
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  err.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                 ),
-              ),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: LandlordPropertyCard(
-                  title: 'Premium Residence',
-                  address: 'Jl. Merdeka No. 45, Jakarta Selatan',
-                  totalRooms: 10,
-                  occupiedRooms: 8,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(landlordProvider),
+                  child: const Text('Coba Lagi'),
                 ),
-              ),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: LandlordPropertyCard(
-                  title: 'Premium Residence',
-                  address: 'Jl. Merdeka No. 45, Jakarta Selatan',
-                  totalRooms: 10,
-                  occupiedRooms: 8,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
-                ),
-              ),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: LandlordPropertyCard(
-                  title: 'Premium Residence',
-                  address: 'Jl. Merdeka No. 45, Jakarta Selatan',
-                  totalRooms: 10,
-                  occupiedRooms: 8,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
-                ),
-              ),
-
-              const SizedBox(height: 40),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatsCard(BuildContext context) {
+  Widget _buildStatsCard(BuildContext context, LandlordStatsModel stats) {
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       padding: const EdgeInsets.all(24),
@@ -146,17 +176,17 @@ class LandlordDashboardPage extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.trending_up_rounded,
                       color: Colors.white,
                       size: 14,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      '+12%',
-                      style: TextStyle(
+                      stats.revenueChange,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -168,9 +198,9 @@ class LandlordDashboardPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Rp 38.500.000',
-            style: TextStyle(
+          Text(
+            _formatCurrency(stats.totalRevenue),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -181,21 +211,21 @@ class LandlordDashboardPage extends StatelessWidget {
 
           Row(
             children: [
-              _buildMiniStat('Total Properti', '2 Unit'),
+              _buildMiniStat('Total Properti', stats.totalUnitsLabel),
               Container(
                 height: 30,
                 width: 1,
                 color: Colors.white30,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              _buildMiniStat('Okupansi', '86%'),
+              _buildMiniStat('Okupansi', stats.occupancyRate),
               Container(
                 height: 30,
                 width: 1,
                 color: Colors.white30,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              _buildMiniStat('All-Inclusive', '13 Penghuni'),
+              _buildMiniStat('All-Inclusive', stats.residentsLabel),
             ],
           ),
 

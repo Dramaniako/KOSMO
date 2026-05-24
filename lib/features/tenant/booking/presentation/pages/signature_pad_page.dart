@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
-import 'contract_success_page.dart';
+import 'payment_checkout_page.dart';
 
 class SignaturePadPage extends StatefulWidget {
   const SignaturePadPage({super.key});
@@ -23,11 +23,11 @@ class _SignaturePadPageState extends State<SignaturePadPage> {
   void _submitSignature() {
     if (_points.isEmpty) return;
     
-    // In a real app, we would convert this to an image and send to server.
-    // Here we just navigate to success page.
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const ContractSuccessPage()),
+      MaterialPageRoute(
+        builder: (context) => PaymentCheckoutPage(signaturePoints: _points),
+      ),
     );
   }
 

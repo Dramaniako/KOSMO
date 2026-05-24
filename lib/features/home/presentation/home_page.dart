@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/services/app_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/pages/kyc_intro_page.dart';
 import '../../profile/presentation/pages/profile_page.dart';
 import '../../tenant/search/presentation/pages/search_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Make status bar transparent for a modern look
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -19,7 +20,8 @@ class HomePage extends StatelessWidget {
       ),
     );
 
-    final userName = "Budi"; // TODO: Fetch from AuthState
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.name ?? "Budi";
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -30,15 +32,8 @@ class HomePage extends StatelessWidget {
           slivers: [
             _buildAppBar(context, userName),
             _buildSearchBar(context),
-            ValueListenableBuilder<bool>(
-              valueListenable: AppState().isVerifiedNotifier,
-              builder: (context, isVerified, child) {
-                if (!isVerified) {
-                  return _buildKycBanner(context);
-                }
-                return const SliverToBoxAdapter(child: SizedBox.shrink());
-              },
-            ),
+            if (!(authState.user?.isVerified ?? false))
+              _buildKycBanner(context),
             _buildActiveKosBanner(context),
             const SliverToBoxAdapter(
               child: SizedBox(height: 40), // Bottom padding

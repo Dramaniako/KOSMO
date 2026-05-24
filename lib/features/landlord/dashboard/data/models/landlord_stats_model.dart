@@ -1,0 +1,33 @@
+import 'landlord_property_model.dart';
+
+class LandlordStatsModel {
+  final double totalRevenue;
+  final String revenueChange;
+  final String totalUnitsLabel;
+  final String occupancyRate;
+  final String residentsLabel;
+  final List<LandlordPropertyModel> properties;
+
+  const LandlordStatsModel({
+    required this.totalRevenue,
+    required this.revenueChange,
+    required this.totalUnitsLabel,
+    required this.occupancyRate,
+    required this.residentsLabel,
+    required this.properties,
+  });
+
+  factory LandlordStatsModel.fromJson(Map<String, dynamic> json) {
+    final list = json['properties'] as List;
+    final parsedProperties = list.map((item) => LandlordPropertyModel.fromJson(item as Map<String, dynamic>)).toList();
+
+    return LandlordStatsModel(
+      totalRevenue: (json['totalRevenue'] as num).toDouble(),
+      revenueChange: json['revenueChange'] as String,
+      totalUnitsLabel: json['totalUnitsLabel'] as String,
+      occupancyRate: json['occupancyRate'] as String,
+      residentsLabel: json['residentsLabel'] as String,
+      properties: parsedProperties,
+    );
+  }
+}
