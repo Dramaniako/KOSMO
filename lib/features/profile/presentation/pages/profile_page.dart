@@ -4,6 +4,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'help_center_page.dart';
+import 'notification_settings_page.dart';
+import 'terms_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -34,13 +37,40 @@ class ProfilePage extends ConsumerWidget {
               
               const SizedBox(height: 24),
               _buildSectionTitle('Pengaturan'),
-              _buildMenuTile(context, Icons.notifications_none_rounded, 'Notifikasi', 'Aktif'),
+              _buildMenuTile(
+                context,
+                Icons.notifications_none_rounded,
+                'Notifikasi',
+                'Aktif',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationSettingsPage()),
+                ),
+              ),
               _buildMenuTile(context, Icons.language_rounded, 'Bahasa', 'Indonesia'),
               
               const SizedBox(height: 24),
               _buildSectionTitle('Bantuan & Informasi'),
-              _buildMenuTile(context, Icons.help_outline_rounded, 'Pusat Bantuan', null),
-              _buildMenuTile(context, Icons.description_outlined, 'Syarat & Ketentuan', null),
+              _buildMenuTile(
+                context,
+                Icons.help_outline_rounded,
+                'Pusat Bantuan',
+                null,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HelpCenterPage()),
+                ),
+              ),
+              _buildMenuTile(
+                context,
+                Icons.description_outlined,
+                'Syarat & Ketentuan',
+                null,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TermsPage()),
+                ),
+              ),
               
               const SizedBox(height: 40),
               
@@ -194,9 +224,15 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuTile(BuildContext context, IconData icon, String title, String? subtitle) {
+  Widget _buildMenuTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String? subtitle, [
+    VoidCallback? onTap,
+  ]) {
     return InkWell(
-      onTap: () {
+      onTap: onTap ?? () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Membuka menu: $title')),
         );

@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../search/data/models/room_model.dart';
+import '../../../search/domain/entities/property_entity.dart';
 import 'signature_pad_page.dart';
 
 class ContractReviewPage extends StatefulWidget {
-  const ContractReviewPage({super.key});
+  final PropertyEntity property;
+  final RoomModel room;
+
+  const ContractReviewPage({
+    super.key,
+    required this.property,
+    required this.room,
+  });
 
   @override
   State<ContractReviewPage> createState() => _ContractReviewPageState();
@@ -13,6 +22,18 @@ class _ContractReviewPageState extends State<ContractReviewPage> {
   bool _hasScrolledToBottom = false;
   bool _isAgreed = false;
   final ScrollController _scrollController = ScrollController();
+
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return buffer.toString();
+  }
 
   @override
   void initState() {
@@ -69,34 +90,34 @@ class _ContractReviewPageState extends State<ContractReviewPage> {
               ),
               child: SingleChildScrollView(
                 controller: _scrollController,
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
+                    const Center(
                       child: Text(
                         'SURAT PERJANJIAN SEWA MENYEWA\nPROPERTI KOS',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    SizedBox(height: 24),
-                    Text('Pasal 1: Objek Sewa', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Text('Pihak Pertama menyewakan kepada Pihak Kedua sebuah kamar kos di Premium Residence beserta seluruh fasilitas yang melekat padanya.'),
-                    SizedBox(height: 16),
-                    Text('Pasal 2: Jangka Waktu & Harga', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Text('Sewa menyewa ini dilangsungkan untuk jangka waktu 1 tahun, dengan harga All-Inclusive sebesar Rp 4.500.000,- / bulan.'),
-                    SizedBox(height: 16),
-                    Text('Pasal 3: Tanggung Jawab', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Text('Pihak Kedua wajib menjaga kebersihan dan fasilitas umum. Kerusakan akibat kelalaian sepenuhnya menjadi tanggung jawab Pihak Kedua.'),
-                    SizedBox(height: 16),
-                    Text('Pasal 4: Pembatalan & Penalti', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Text('Pembatalan sepihak sebelum masa sewa berakhir akan dikenakan penalti sebesar 1 bulan biaya sewa.'),
-                    SizedBox(height: 100), // Fake height to ensure scrolling
-                    Center(child: Text('--- Akhir Dokumen ---', style: TextStyle(color: Colors.grey))),
+                    const SizedBox(height: 24),
+                    const Text('Pasal 1: Objek Sewa', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Pihak Pertama menyewakan kepada Pihak Kedua sebuah kamar kos di ${widget.property.title} (${widget.room.roomNumber}) beserta seluruh fasilitas yang melekat padanya.'),
+                    const SizedBox(height: 16),
+                    const Text('Pasal 2: Jangka Waktu & Harga', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Sewa menyewa ini dilangsungkan untuk jangka waktu 1 bulan, dengan harga ${widget.property.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"} sebesar Rp ${_formatCurrency(widget.property.price)} / bulan.'),
+                    const SizedBox(height: 16),
+                    const Text('Pasal 3: Tanggung Jawab', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('Pihak Kedua wajib menjaga kebersihan dan fasilitas umum. Kerusakan akibat kelalaian sepenuhnya menjadi tanggung jawab Pihak Kedua.'),
+                    const SizedBox(height: 16),
+                    const Text('Pasal 4: Pembatalan & Penalti', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('Pembatalan sepihak sebelum masa sewa berakhir akan dikenakan penalti sebesar 1 bulan biaya sewa.'),
+                    const SizedBox(height: 100), // Fake height to ensure scrolling
+                    const Center(child: Text('--- Akhir Dokumen ---', style: TextStyle(color: Colors.grey))),
                   ],
                 ),
               ),
@@ -147,7 +168,12 @@ class _ContractReviewPageState extends State<ContractReviewPage> {
                       onPressed: _isAgreed ? () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const SignaturePadPage()),
+                          MaterialPageRoute(
+                            builder: (context) => SignaturePadPage(
+                              property: widget.property,
+                              room: widget.room,
+                            ),
+                          ),
                         );
                       } : null,
                       style: ElevatedButton.styleFrom(

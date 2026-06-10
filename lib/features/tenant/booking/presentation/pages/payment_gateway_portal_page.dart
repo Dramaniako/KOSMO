@@ -4,12 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../search/data/models/room_model.dart';
 import '../../../dashboard/data/models/transaction_model.dart';
 import '../../../dashboard/presentation/providers/transaction_provider.dart';
 import '../../../dashboard/presentation/widgets/transaction_card.dart';
+import '../../../search/domain/entities/property_entity.dart';
 import 'contract_success_page.dart';
 
 class PaymentGatewayPortalPage extends ConsumerStatefulWidget {
+  final PropertyEntity property;
+  final RoomModel room;
   final double amount;
   final String paymentMethod;
   final String? bankCode;
@@ -17,6 +22,8 @@ class PaymentGatewayPortalPage extends ConsumerStatefulWidget {
 
   const PaymentGatewayPortalPage({
     super.key,
+    required this.property,
+    required this.room,
     required this.amount,
     required this.paymentMethod,
     this.bankCode,
@@ -128,6 +135,18 @@ class _PaymentGatewayPortalPageState extends ConsumerState<PaymentGatewayPortalP
     return months[month - 1];
   }
 
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return buffer.toString();
+  }
+
   void _simulatePaymentSuccess() {
     setState(() {
       _isProcessing = true;
@@ -149,21 +168,26 @@ class _PaymentGatewayPortalPageState extends ConsumerState<PaymentGatewayPortalP
         final invoiceSuffix = (100 + Random().nextInt(900)).toString(); // Random 3 digits
         final newInvoice = 'INV-KSM-0526-$invoiceSuffix';
 
+        final userId = ref.read(authProvider).user?.id;
         final newTransaction = TransactionModel(
           date: dateString,
           invoiceNumber: newInvoice,
           amount: widget.amount,
           status: TransactionStatus.success,
-          propertyName: 'Premium Residence (Kamar 2A)',
+          propertyName: '${widget.property.title} (${widget.room.roomNumber})',
+          userId: userId,
+          transactionType: 'rental',
         );
 
-        ref.read(transactionProvider.notifier).addTransaction(newTransaction);
+        ref.read(transactionProvider.notifier).addTransaction(newTransaction, userId, widget.room.id);
 
         // Redirect to Success Contract Screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ContractSuccessPage(
+              property: widget.property,
+              room: widget.room,
               signaturePoints: widget.signaturePoints,
             ),
           ),
@@ -306,7 +330,7 @@ class _PaymentGatewayPortalPageState extends ConsumerState<PaymentGatewayPortalP
               const Text('TOTAL BIAYA', style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
               const SizedBox(height: 4),
               Text(
-                'Rp ${widget.amount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                'Rp ${_formatCurrency(widget.amount)}',
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
               ),
             ],
@@ -395,7 +419,7 @@ class _PaymentGatewayPortalPageState extends ConsumerState<PaymentGatewayPortalP
             _buildAccordionStep('1. Masuk ke M-Banking / ATM Bank Anda.'),
             _buildAccordionStep('2. Pilih menu "Transfer" lalu klik "Virtual Account".'),
             _buildAccordionStep('3. Masukkan kode pembayaran di atas dan pastikan nama penerima adalah "KOSMO INDONESIA".'),
-            _buildAccordionStep('4. Masukkan nominal tagihan Rp 4.550.000,- secara tepat lalu konfirmasi pin Anda.'),
+            _buildAccordionStep('4. Masukkan nominal tagihan Rp ${_formatCurrency(widget.amount)},- secara tepat lalu konfirmasi pin Anda.'),
           ],
         ),
       );

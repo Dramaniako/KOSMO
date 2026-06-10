@@ -9,6 +9,7 @@ class TransactionCard extends StatelessWidget {
   final double amount;
   final TransactionStatus status;
   final String propertyName;
+  final VoidCallback? onPay;
 
   const TransactionCard({
     super.key,
@@ -17,7 +18,20 @@ class TransactionCard extends StatelessWidget {
     required this.amount,
     required this.status,
     required this.propertyName,
+    this.onPay,
   });
+
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return 'Rp ${buffer.toString()}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +143,7 @@ class TransactionCard extends StatelessWidget {
                 ),
               ),
               Text(
-                'Rp ${(amount / 1000000).toStringAsFixed(1)} Jt',
+                _formatCurrency(amount),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -160,7 +174,7 @@ class TransactionCard extends StatelessWidget {
               ),
               if (status == TransactionStatus.failed || status == TransactionStatus.pending)
                 TextButton(
-                  onPressed: () {},
+                  onPressed: onPay,
                   style: TextButton.styleFrom(
                     minimumSize: Size.zero,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -1,50 +1,34 @@
-import '../../../../../core/network/api_client.dart';
+import '../../../../../core/services/mysql_service.dart';
 import '../../domain/entities/property_entity.dart';
 import '../models/property_model.dart';
 
 class PropertyRepository {
-  final ApiClient _apiClient;
+  final MySqlService _mysqlService;
 
-  PropertyRepository(this._apiClient);
+  PropertyRepository(this._mysqlService);
 
   Future<List<PropertyEntity>> getProperties() async {
-    final mockJson = {
-      'data': [
-        {
-          'title': 'Kos Eksklusif Mawar',
-          'location': 'Jakarta Selatan',
-          'price': 2500000.0,
-          'rating': 4.8,
-          'isAllInclusive': true,
-          'imageUrl': 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
-          'latitude': -6.2442,
-          'longitude': 106.7982,
-        },
-        {
-          'title': 'Kos Mahasiswa UI',
-          'location': 'Depok',
-          'price': 1500000.0,
-          'rating': 4.5,
-          'isAllInclusive': false,
-          'imageUrl': 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
-          'latitude': -6.3680,
-          'longitude': 106.8320,
-        },
-        {
-          'title': 'Premium Residence',
-          'location': 'Jakarta Pusat',
-          'price': 4500000.0,
-          'rating': 4.9,
-          'isAllInclusive': true,
-          'imageUrl': 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400',
-          'latitude': -6.2088,
-          'longitude': 106.8456,
-        },
-      ]
-    };
-
-    final response = await _apiClient.mockGet('/properties', mockResponse: mockJson);
-    final dataList = response['data'] as List;
-    return dataList.map((item) => PropertyModel.fromJson(item as Map<String, dynamic>)).toList();
+    return _mysqlService.run((conn) async {
+      final results = await conn.execute('SELECT * FROM properties');
+      final list = <PropertyEntity>[];
+      for (var row in results.rows) {
+        list.add(PropertyModel(
+          id: int.tryParse(row.colByName('id') ?? '0') ?? 0,
+          ownerId: int.tryParse(row.colByName('owner_id') ?? '2') ?? 2,
+          title: row.colByName('title') ?? '',
+          location: row.colByName('location') ?? '',
+          address: row.colByName('address') ?? '',
+          price: double.tryParse(row.colByName('price') ?? '0') ?? 0.0,
+          rating: double.tryParse(row.colByName('rating') ?? '0') ?? 0.0,
+          isAllInclusive: row.colByName('is_all_inclusive') == '1',
+          allInclusiveBills: row.colByName('all_inclusive_bills'),
+          imageUrl: row.colByName('image_url') ?? '',
+          latitude: double.tryParse(row.colByName('latitude') ?? '0') ?? 0.0,
+          longitude: double.tryParse(row.colByName('longitude') ?? '0') ?? 0.0,
+          description: row.colByName('description') ?? '',
+        ));
+      }
+      return list;
+    });
   }
 }

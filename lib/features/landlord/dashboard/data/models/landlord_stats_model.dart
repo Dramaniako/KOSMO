@@ -2,6 +2,8 @@ import 'landlord_property_model.dart';
 
 class LandlordStatsModel {
   final double totalRevenue;
+  final double totalWithdrawn;
+  final double balance;
   final String revenueChange;
   final String totalUnitsLabel;
   final String occupancyRate;
@@ -10,6 +12,8 @@ class LandlordStatsModel {
 
   const LandlordStatsModel({
     required this.totalRevenue,
+    required this.totalWithdrawn,
+    required this.balance,
     required this.revenueChange,
     required this.totalUnitsLabel,
     required this.occupancyRate,
@@ -23,6 +27,8 @@ class LandlordStatsModel {
 
     return LandlordStatsModel(
       totalRevenue: (json['totalRevenue'] as num).toDouble(),
+      totalWithdrawn: (json['totalWithdrawn'] as num).toDouble(),
+      balance: (json['balance'] as num).toDouble(),
       revenueChange: json['revenueChange'] as String,
       totalUnitsLabel: json['totalUnitsLabel'] as String,
       occupancyRate: json['occupancyRate'] as String,

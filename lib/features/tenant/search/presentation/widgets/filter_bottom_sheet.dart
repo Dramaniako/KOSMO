@@ -1,16 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../providers/search_provider.dart';
 
-class FilterBottomSheet extends StatefulWidget {
+class FilterBottomSheet extends ConsumerStatefulWidget {
   const FilterBottomSheet({super.key});
 
   @override
-  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+  ConsumerState<FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  RangeValues _priceRange = const RangeValues(1000000, 5000000);
-  bool _allInclusiveOnly = true;
+class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
+  late RangeValues _priceRange;
+  late bool _allInclusiveOnly;
+  late String _selectedCity;
+
+  final List<String> _cities = [
+    'Semua',
+    'Denpasar',
+    'Badung',
+    'Gianyar',
+    'Tabanan',
+    'Buleleng',
+    'Karangasem',
+    'Klungkung',
+    'Bangli',
+    'Jembrana',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final currentFilters = ref.read(searchFiltersProvider);
+    _priceRange = RangeValues(currentFilters.minPrice, currentFilters.maxPrice);
+    _allInclusiveOnly = currentFilters.allInclusiveOnly;
+    _selectedCity = currentFilters.selectedCity;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +70,39 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
+          // City/Regency Selector
+          const Text(
+            'Kabupaten / Kota di Bali',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _selectedCity,
+            dropdownColor: Colors.white,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12))),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            items: _cities.map((city) {
+              return DropdownMenuItem(value: city, child: Text(city));
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() {
+                  _selectedCity = val;
+                });
+              }
+            },
+          ),
+          const SizedBox(height: 24),
+
           // Price Range Filter
           const Text(
             'Rentang Harga (per bulan)',
@@ -61,17 +118,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             children: [
               Text(
                 'Rp ${(_priceRange.start / 1000000).toStringAsFixed(1)} Jt',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
               Text(
                 'Rp ${(_priceRange.end / 1000000).toStringAsFixed(1)} Jt',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ],
           ),
           RangeSlider(
             values: _priceRange,
-            min: 500000,
+            min: 0,
             max: 10000000,
             divisions: 19,
             activeColor: AppColors.primary,
@@ -103,7 +162,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.electric_bolt_rounded, color: AppColors.primary, size: 20),
+                      child: const Icon(Icons.electric_bolt_rounded,
+                          color: AppColors.primary, size: 20),
                     ),
                     const SizedBox(width: 12),
                     const Column(
@@ -111,11 +171,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       children: [
                         Text(
                           'All-Inclusive',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary),
                         ),
                         Text(
                           'Sewa & Tagihan jadi 1',
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -141,6 +204,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             height: 56,
             child: ElevatedButton(
               onPressed: () {
+                ref
+                    .read(searchFiltersProvider.notifier)
+                    .update((state) => state.copyWith(
+                          selectedCity: _selectedCity,
+                          minPrice: _priceRange.start,
+                          maxPrice: _priceRange.end,
+                          allInclusiveOnly: _allInclusiveOnly,
+                        ));
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(

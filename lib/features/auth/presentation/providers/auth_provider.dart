@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/shared_preferences_provider.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../domain/user_entity.dart';
 
 class AuthState {
@@ -33,6 +35,7 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
     final prefs = ref.watch(sharedPreferencesProvider);
+    final id = prefs.getInt('auth_id');
     final email = prefs.getString('auth_email');
     final name = prefs.getString('auth_name');
     final isVerified = prefs.getBool('auth_is_verified') ?? false;
@@ -40,6 +43,7 @@ class AuthNotifier extends Notifier<AuthState> {
     if (email != null && name != null) {
       return AuthState(
         user: UserEntity(
+          id: id,
           name: name,
           email: email,
           isVerified: isVerified,
@@ -52,32 +56,30 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      final user = await repository.login(email, password);
 
-    if (email.isNotEmpty && password.length >= 6) {
-      final name = email.split('@')[0];
-      final userName = name.isNotEmpty
-          ? '${name[0].toUpperCase()}${name.substring(1)}'
-          : 'Budi';
+      if (user != null) {
+        final prefs = ref.read(sharedPreferencesProvider);
+        await prefs.setInt('auth_id', user.id ?? 0);
+        await prefs.setString('auth_email', user.email);
+        await prefs.setString('auth_name', user.name);
+        await prefs.setBool('auth_is_verified', user.isVerified);
 
-      final user = UserEntity(
-        name: userName,
-        email: email,
-        isVerified: false,
-      );
-
-      final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.setString('auth_email', email);
-      await prefs.setString('auth_name', userName);
-      await prefs.setBool('auth_is_verified', false);
-
-      state = AuthState(user: user);
-      return true;
-    } else {
+        state = AuthState(user: user);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Email atau Kata Sandi salah.',
+        );
+        return false;
+      }
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Email atau Kata Sandi salah.',
+        errorMessage: 'Gagal melakukan login: $e',
       );
       return false;
     }
@@ -86,27 +88,30 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<bool> register(String name, String email, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      final user = await repository.register(name, email, password);
 
-    if (name.isNotEmpty && email.isNotEmpty && password.length >= 6) {
-      final user = UserEntity(
-        name: name,
-        email: email,
-        isVerified: false,
-      );
+      if (user != null) {
+        final prefs = ref.read(sharedPreferencesProvider);
+        await prefs.setInt('auth_id', user.id ?? 0);
+        await prefs.setString('auth_email', user.email);
+        await prefs.setString('auth_name', user.name);
+        await prefs.setBool('auth_is_verified', user.isVerified);
 
-      final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.setString('auth_email', email);
-      await prefs.setString('auth_name', name);
-      await prefs.setBool('auth_is_verified', false);
-
-      state = AuthState(user: user);
-      return true;
-    } else {
+        state = AuthState(user: user);
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Gagal mendaftarkan akun.',
+        );
+        return false;
+      }
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal membuat akun. Periksa data Anda.',
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
       return false;
     }
@@ -114,6 +119,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> logout() async {
     final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.remove('auth_id');
     await prefs.remove('auth_email');
     await prefs.remove('auth_name');
     await prefs.remove('auth_is_verified');
@@ -123,12 +129,21 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> verifyUser() async {
     if (state.user != null) {
-      final updatedUser = state.user!.copyWith(isVerified: true);
+      try {
+        final repository = ref.read(authRepositoryProvider);
+        final success = await repository.verifyUser(state.user!.email);
 
-      final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.setBool('auth_is_verified', true);
+        if (success) {
+          final updatedUser = state.user!.copyWith(isVerified: true);
 
-      state = AuthState(user: updatedUser);
+          final prefs = ref.read(sharedPreferencesProvider);
+          await prefs.setBool('auth_is_verified', true);
+
+          state = AuthState(user: updatedUser);
+        }
+      } catch (e) {
+        debugPrint('Error verifying user: $e');
+      }
     }
   }
 }

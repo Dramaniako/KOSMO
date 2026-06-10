@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../search/data/models/room_model.dart';
+import '../../../search/domain/entities/property_entity.dart';
 import 'payment_gateway_portal_page.dart';
 
 class PaymentCheckoutPage extends StatefulWidget {
+  final PropertyEntity property;
+  final RoomModel room;
   final List<Offset?>? signaturePoints;
 
-  const PaymentCheckoutPage({super.key, this.signaturePoints});
+  const PaymentCheckoutPage({
+    super.key,
+    required this.property,
+    required this.room,
+    this.signaturePoints,
+  });
 
   @override
   State<PaymentCheckoutPage> createState() => _PaymentCheckoutPageState();
@@ -56,7 +65,9 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
         context,
         MaterialPageRoute(
           builder: (context) => PaymentGatewayPortalPage(
-            amount: 4550000.0,
+            property: widget.property,
+            room: widget.room,
+            amount: widget.property.price + 50000.0,
             paymentMethod: _selectedMethod,
             bankCode: _selectedMethod == 'va' ? _selectedBank : null,
             signaturePoints: widget.signaturePoints,
@@ -151,6 +162,18 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
     );
   }
 
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return buffer.toString();
+  }
+
   Widget _buildSummaryCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -167,9 +190,9 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Premium Residence (Kamar 2A)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          Text(
+            '${widget.property.title} (${widget.room.roomNumber})',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           const Text(
             'Sewa bulan pertama + deposit admin',
@@ -178,7 +201,7 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          _buildSummaryRow('Biaya Sewa Bulanan', 'Rp 4.500.000'),
+          _buildSummaryRow('Biaya Sewa Bulanan', 'Rp ${_formatCurrency(widget.property.price)}'),
           const SizedBox(height: 8),
           _buildSummaryRow('Biaya Layanan & Administrasi', 'Rp 50.000'),
           const SizedBox(height: 16),
@@ -186,14 +209,14 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Total Pembayaran',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               Text(
-                'Rp 4.550.000',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
+                'Rp ${_formatCurrency(widget.property.price + 50000.0)}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
               ),
             ],
           ),

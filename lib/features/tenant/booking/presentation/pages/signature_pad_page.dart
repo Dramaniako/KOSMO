@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../search/data/models/room_model.dart';
+import '../../../search/domain/entities/property_entity.dart';
 import 'payment_checkout_page.dart';
 
 class SignaturePadPage extends StatefulWidget {
-  const SignaturePadPage({super.key});
+  final PropertyEntity property;
+  final RoomModel room;
+
+  const SignaturePadPage({
+    super.key,
+    required this.property,
+    required this.room,
+  });
 
   @override
   State<SignaturePadPage> createState() => _SignaturePadPageState();
@@ -26,7 +35,11 @@ class _SignaturePadPageState extends State<SignaturePadPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => PaymentCheckoutPage(signaturePoints: _points),
+        builder: (context) => PaymentCheckoutPage(
+          property: widget.property,
+          room: widget.room,
+          signaturePoints: _points,
+        ),
       ),
     );
   }

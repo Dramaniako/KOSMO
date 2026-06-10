@@ -7,6 +7,8 @@ class LandlordPropertyCard extends StatelessWidget {
   final int totalRooms;
   final int occupiedRooms;
   final String imageUrl;
+  final VoidCallback? onDelete;
+  final VoidCallback? onManageProperty;
 
   const LandlordPropertyCard({
     super.key,
@@ -15,12 +17,15 @@ class LandlordPropertyCard extends StatelessWidget {
     required this.totalRooms,
     required this.occupiedRooms,
     required this.imageUrl,
+    this.onDelete,
+    this.onManageProperty,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double occupancyRate = occupiedRooms / totalRooms;
-    final bool isFull = occupiedRooms == totalRooms;
+    final double occupancyRate =
+        totalRooms > 0 ? occupiedRooms / totalRooms : 0;
+    final bool isFull = totalRooms > 0 && occupiedRooms == totalRooms;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -57,12 +62,35 @@ class LandlordPropertyCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Status Badge
+                // Delete Button (top-left)
+                if (onDelete != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Material(
+                      color: const Color.fromARGB(137, 255, 255, 255),
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: onDelete,
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.delete_outline_rounded,
+                            color: Color.fromARGB(255, 255, 0, 0),
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                // Status Badge (top-right)
                 Positioned(
                   top: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: isFull ? AppColors.secondary : AppColors.primary,
                       borderRadius: BorderRadius.circular(12),
@@ -80,7 +108,7 @@ class LandlordPropertyCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Body Content
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -98,7 +126,8 @@ class LandlordPropertyCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
+                    const Icon(Icons.location_on_rounded,
+                        size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -114,14 +143,17 @@ class LandlordPropertyCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Occupancy Bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Keterisian',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary),
                     ),
                     Text(
                       '$occupiedRooms/$totalRooms Kamar',
@@ -144,33 +176,20 @@ class LandlordPropertyCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Actions
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.view_list_rounded, size: 16),
-                        label: const Text('Kelola Kamar'),
+                        onPressed: onManageProperty,
+                        icon: const Icon(Icons.edit_note_rounded, size: 18),
+                        label: const Text('Kelola Property'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
                           side: const BorderSide(color: AppColors.primary),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.percent_rounded, size: 16),
-                        label: const Text('Set Bundling'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),

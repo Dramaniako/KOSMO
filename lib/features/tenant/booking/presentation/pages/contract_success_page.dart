@@ -4,11 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/providers/shared_preferences_provider.dart';
 import '../../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../search/data/models/room_model.dart';
+import '../../../search/domain/entities/property_entity.dart';
 
 class ContractSuccessPage extends ConsumerStatefulWidget {
+  final PropertyEntity property;
+  final RoomModel room;
   final List<Offset?>? signaturePoints;
 
-  const ContractSuccessPage({super.key, this.signaturePoints});
+  const ContractSuccessPage({
+    super.key,
+    required this.property,
+    required this.room,
+    this.signaturePoints,
+  });
 
   @override
   ConsumerState<ContractSuccessPage> createState() => _ContractSuccessPageState();
@@ -19,6 +28,18 @@ class _ContractSuccessPageState extends ConsumerState<ContractSuccessPage> {
   double _exportProgress = 0.0;
   int _stageIndex = 0;
   Timer? _timer;
+
+  String _formatCurrency(double amount) {
+    final valStr = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < valStr.length; i++) {
+      if (i > 0 && (valStr.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(valStr[i]);
+    }
+    return buffer.toString();
+  }
 
   late String _tenantName;
   late String _tenantNik;
@@ -345,9 +366,9 @@ class _ContractSuccessPageState extends ConsumerState<ContractSuccessPage> {
             style: TextStyle(fontSize: 11, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Sewa menyewa dilangsungkan untuk jangka waktu 1 tahun, terhitung dari tanggal pembayaran pertama untuk Kamar 2A Premium Residence. Harga sewa yang disepakati adalah sebesar Rp 4.500.000,- / bulan dengan sistem All-Inclusive.',
-            style: TextStyle(fontSize: 10, color: AppColors.textSecondary, height: 1.4),
+          Text(
+            'Sewa menyewa dilangsungkan untuk jangka waktu 1 bulan, terhitung dari tanggal pembayaran pertama untuk ${widget.property.title} (${widget.room.roomNumber}). Harga sewa yang disepakati adalah sebesar Rp ${_formatCurrency(widget.property.price)},- / bulan dengan sistem ${widget.property.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"}.',
+            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, height: 1.4),
             textAlign: TextAlign.justify,
           ),
 

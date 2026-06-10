@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../data/models/transaction_model.dart';
 import '../providers/transaction_provider.dart';
 import '../widgets/transaction_card.dart';
+import 'arrears_payment_page.dart';
 
 class TransactionHistoryPage extends ConsumerWidget {
   const TransactionHistoryPage({super.key});
@@ -24,7 +26,12 @@ class TransactionHistoryPage extends ConsumerWidget {
         data: (transactions) {
           final pendingTransactions = transactions.where((t) => t.status != TransactionStatus.success).toList();
           final successTransactions = transactions.where((t) => t.status == TransactionStatus.success).toList();
-          final hasFailed = transactions.any((t) => t.status == TransactionStatus.failed);
+          
+          final failedArrears = transactions.cast<TransactionModel?>().firstWhere(
+            (t) => t != null && t.status == TransactionStatus.failed && t.transactionType == 'arrears',
+            orElse: () => null,
+          );
+          final hasFailedArrears = failedArrears != null;
 
           return SafeArea(
             child: RefreshIndicator(
@@ -34,8 +41,8 @@ class TransactionHistoryPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (hasFailed)
-                      _buildDunningBanner(context),
+                    if (hasFailedArrears)
+                      _buildDunningBanner(context, ref, failedArrears),
 
                     if (pendingTransactions.isNotEmpty) ...[
                       const Padding(
@@ -53,6 +60,14 @@ class TransactionHistoryPage extends ConsumerWidget {
                           amount: t.amount,
                           status: t.status,
                           propertyName: t.propertyName,
+                          onPay: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ArrearsPaymentPage(transaction: t),
+                              ),
+                            );
+                          },
                         ),
                       )),
                     ],
@@ -117,7 +132,7 @@ class TransactionHistoryPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildDunningBanner(BuildContext context) {
+  Widget _buildDunningBanner(BuildContext context, WidgetRef ref, TransactionModel transaction) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
@@ -163,8 +178,11 @@ class TransactionHistoryPage extends ConsumerWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Membuka Payment Gateway...')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ArrearsPaymentPage(transaction: transaction),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
