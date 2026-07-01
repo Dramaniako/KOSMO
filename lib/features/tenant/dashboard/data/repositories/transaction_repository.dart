@@ -23,6 +23,8 @@ class TransactionRepository {
           propertyName: row.colByName('property_name') ?? '',
           userId: row.colByName('user_id') != null ? int.tryParse(row.colByName('user_id')!) : null,
           transactionType: row.colByName('transaction_type') ?? 'rental',
+          propertyId: row.colByName('property_id') != null ? int.tryParse(row.colByName('property_id')!) : null,
+          roomId: row.colByName('room_id') != null ? int.tryParse(row.colByName('room_id')!) : null,
         ));
       }
       return list;
@@ -47,9 +49,22 @@ class TransactionRepository {
       if (transaction.status == TransactionStatus.success) statusStr = 'success';
       if (transaction.status == TransactionStatus.failed) statusStr = 'failed';
 
+      int? propertyId = transaction.propertyId;
+      int? targetRoomId = roomId ?? transaction.roomId;
+      
+      if (targetRoomId != null && propertyId == null) {
+        final roomQuery = await conn.execute(
+          "SELECT property_id FROM rooms WHERE id = :roomId LIMIT 1",
+          {"roomId": targetRoomId},
+        );
+        if (roomQuery.rows.isNotEmpty) {
+          propertyId = int.tryParse(roomQuery.rows.first.colAt(0) ?? '');
+        }
+      }
+
       final result = await conn.execute(
-        "INSERT INTO transactions (invoice_number, date_str, amount, status, property_name, user_id, transaction_type) "
-        "VALUES (:invoice_number, :date_str, :amount, :status, :property_name, :user_id, :transaction_type)",
+        "INSERT INTO transactions (invoice_number, date_str, amount, status, property_name, user_id, transaction_type, property_id, room_id) "
+        "VALUES (:invoice_number, :date_str, :amount, :status, :property_name, :user_id, :transaction_type, :property_id, :room_id)",
         {
           'invoice_number': transaction.invoiceNumber,
           'date_str': transaction.date,
@@ -58,6 +73,8 @@ class TransactionRepository {
           'property_name': transaction.propertyName,
           'user_id': userId,
           'transaction_type': transaction.transactionType,
+          'property_id': propertyId,
+          'room_id': targetRoomId,
         },
       );
 
@@ -69,30 +86,30 @@ class TransactionRepository {
         }
 
         final propResult = await conn.execute(
-          "SELECT id FROM properties WHERE title = :title LIMIT 1",
+          "SELECT id_int FROM properties WHERE name = :title LIMIT 1",
           {"title": propTitle},
         );
         if (propResult.rows.isNotEmpty) {
-          final propertyId = int.parse(propResult.rows.first.colAt(0)!);
+          final dbPropertyId = int.parse(propResult.rows.first.colAt(0)!);
 
           // Find if user already has a room in this property
           final existingRoom = await conn.execute(
             "SELECT id FROM rooms WHERE property_id = :propertyId AND tenant_id = :userId LIMIT 1",
-            {"propertyId": propertyId, "userId": userId},
+            {"propertyId": dbPropertyId, "userId": userId},
           );
 
           if (existingRoom.rows.isEmpty) {
-            if (roomId != null) {
+            if (targetRoomId != null) {
               // Occupy the exact room selected by the user
               await conn.execute(
                 "UPDATE rooms SET tenant_id = :userId WHERE id = :roomId",
-                {"userId": userId, "roomId": roomId},
+                {"userId": userId, "roomId": targetRoomId},
               );
             } else {
               // Fallback to find a vacant room in this property
               final vacantRoom = await conn.execute(
                 "SELECT id FROM rooms WHERE property_id = :propertyId AND tenant_id IS NULL LIMIT 1",
-                {"propertyId": propertyId},
+                {"propertyId": dbPropertyId},
               );
 
               if (vacantRoom.rows.isNotEmpty) {
@@ -105,14 +122,14 @@ class TransactionRepository {
                 // No vacant room found, let's create a new room dynamically
                 final countResult = await conn.execute(
                   "SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId",
-                  {"propertyId": propertyId},
+                  {"propertyId": dbPropertyId},
                 );
                 final count = int.parse(countResult.rows.first.colAt(0) ?? '0');
                 final newRoomNumber = "Kamar ${count + 101}";
                 await conn.execute(
                   "INSERT INTO rooms (property_id, room_number, tenant_id) VALUES (:propertyId, :roomNumber, :userId)",
                   {
-                    "propertyId": propertyId,
+                    "propertyId": dbPropertyId,
                     "roomNumber": newRoomNumber,
                     "userId": userId,
                   },
@@ -122,10 +139,10 @@ class TransactionRepository {
 
             // Sync occupied_rooms in properties table from rooms table
             await conn.execute(
-              "UPDATE properties SET occupied_rooms = "
+              "UPDATE properties SET occupiedRooms = "
               "(SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId AND tenant_id IS NOT NULL) "
-              "WHERE id = :propertyId",
-              {"propertyId": propertyId},
+              "WHERE id_int = :propertyId",
+              {"propertyId": dbPropertyId},
             );
           }
         }
@@ -142,6 +159,34 @@ class TransactionRepository {
         {"invoiceNumber": invoiceNumber},
       );
       return result.affectedRows > BigInt.zero;
+    });
+  }
+
+  Future<List<TransactionModel>> getReceivedPaymentsForLandlord(int landlordId) async {
+    return _mysqlService.run((conn) async {
+      final results = await conn.execute(
+        "SELECT t.* FROM transactions t "
+        "JOIN properties p ON t.property_id = p.id_int "
+        "WHERE p.owner_id_int = :landlordId AND t.status = 'success' "
+        "ORDER BY t.id DESC",
+        {"landlordId": landlordId},
+      );
+      
+      final list = <TransactionModel>[];
+      for (var row in results.rows) {
+        list.add(TransactionModel(
+          date: row.colByName('date_str') ?? '',
+          invoiceNumber: row.colByName('invoice_number') ?? '',
+          amount: double.tryParse(row.colByName('amount') ?? '0') ?? 0.0,
+          status: _parseTransactionStatus(row.colByName('status') ?? 'pending'),
+          propertyName: row.colByName('property_name') ?? '',
+          userId: row.colByName('user_id') != null ? int.tryParse(row.colByName('user_id')!) : null,
+          transactionType: row.colByName('transaction_type') ?? 'rental',
+          propertyId: row.colByName('property_id') != null ? int.tryParse(row.colByName('property_id')!) : null,
+          roomId: row.colByName('room_id') != null ? int.tryParse(row.colByName('room_id')!) : null,
+        ));
+      }
+      return list;
     });
   }
 }

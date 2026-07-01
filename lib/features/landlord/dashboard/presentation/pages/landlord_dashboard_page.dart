@@ -9,6 +9,7 @@ import '../../../../auth/presentation/pages/kyc_intro_page.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../providers/landlord_provider.dart';
 import 'landlord_withdraw_page.dart';
+import '../../../properties/presentation/pages/landlord_profile_setup_page.dart';
 import '../../data/models/landlord_stats_model.dart';
 import '../../data/models/landlord_property_model.dart';
 
@@ -279,6 +280,9 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
       if (deleted) {
         // Refresh both landlord dashboard and search results
         ref.invalidate(landlordProvider);
+        ref.invalidate(landlordTenantsProvider);
+        ref.invalidate(landlordTransactionsProvider);
+        ref.invalidate(landlordReviewsProvider);
         ref.invalidate(searchProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -375,6 +379,16 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
                                         child: const Text('Verifikasi Sekarang', style: TextStyle(color: Colors.white)),
                                       ),
                                     ],
+                                  ),
+                                );
+                              } else if (authUser.age == null || authUser.age == 0 ||
+                                  authUser.phoneNumber == null || authUser.phoneNumber!.isEmpty ||
+                                  authUser.gender == null || authUser.gender!.isEmpty ||
+                                  authUser.address == null || authUser.address!.isEmpty) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LandlordProfileSetupPage(),
                                   ),
                                 );
                               } else {
@@ -557,6 +571,9 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
                   ),
                 ).then((_) {
                   ref.invalidate(landlordProvider);
+                  ref.invalidate(landlordTenantsProvider);
+                  ref.invalidate(landlordTransactionsProvider);
+                  ref.invalidate(landlordReviewsProvider);
                 });
               },
               icon: const Icon(

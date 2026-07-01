@@ -207,24 +207,23 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
 
     try {
       final repository = ref.read(landlordRepositoryProvider);
-      final price = double.parse(_priceController.text);
-      final totalRooms = int.parse(_totalRoomsController.text);
-
-      final success = await repository.editProperty(
-        id: widget.property.id,
-        title: _titleController.text,
-        address: _addressController.text,
-        location: _selectedLocation,
-        price: price,
-        imageUrl: _imageUrlController.text,
-        isAllInclusive: _isAllInclusive,
-        totalRooms: totalRooms,
-        description: _descriptionController.text,
-        allInclusiveBills: _isAllInclusive ? _selectedBills.join(',') : '',
-      );
+       final totalRooms = int.parse(_totalRoomsController.text);
+ 
+       final success = await repository.editProperty(
+         id: widget.property.id,
+         title: _titleController.text,
+         address: _addressController.text,
+         location: _selectedLocation,
+         imageUrl: _imageUrlController.text,
+         totalRooms: totalRooms,
+         description: _descriptionController.text,
+       );
 
       if (success) {
         ref.invalidate(landlordProvider);
+        ref.invalidate(landlordTenantsProvider);
+        ref.invalidate(landlordTransactionsProvider);
+        ref.invalidate(landlordReviewsProvider);
         ref.invalidate(searchProvider);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -258,6 +257,11 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
     final descController = TextEditingController(text: room.description);
     final imgController = TextEditingController(text: room.imageUrl);
     final nameController = TextEditingController(text: room.roomNumber);
+    final priceController = TextEditingController(text: room.price.toInt().toString());
+    bool isAllInclusive = room.isAllInclusive;
+    List<String> selectedBills = room.allInclusiveBills != null && room.allInclusiveBills!.isNotEmpty
+        ? room.allInclusiveBills!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        : [];
     bool isSavingRoom = false;
     bool isUploadingRoomPhoto = false;
     double roomPhotoUploadProgress = 0.0;
@@ -377,6 +381,56 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Harga Kamar per Bulan (Rp)',
+                  hintText: 'Contoh: 1500000',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('All-Inclusive (Bundling Tagihan)'),
+                value: isAllInclusive,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  setModalState(() {
+                    isAllInclusive = val;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (isAllInclusive) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    'Pilih Tagihan yang Termasuk:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ),
+                ..._availableBills.map((bill) {
+                  final isSelected = selectedBills.contains(bill);
+                  return CheckboxListTile(
+                    title: Text(bill),
+                    value: isSelected,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    onChanged: (val) {
+                      setModalState(() {
+                        if (val == true) {
+                          selectedBills.add(bill);
+                        } else {
+                          selectedBills.remove(bill);
+                        }
+                      });
+                    },
+                  );
+                }),
+              ],
+              const SizedBox(height: 16),
               const Text(
                 'Foto Kamar',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
@@ -490,6 +544,9 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                                   roomNumber: nameController.text,
                                   description: descController.text,
                                   imageUrl: imgController.text,
+                                  price: double.tryParse(priceController.text) ?? 0.0,
+                                  isAllInclusive: isAllInclusive,
+                                  allInclusiveBills: isAllInclusive ? selectedBills.join(',') : '',
                                 );
                             if (success) {
                               _loadRooms();
@@ -537,6 +594,9 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
     final nameController = TextEditingController(text: 'Kamar Baru');
     final descController = TextEditingController();
     final imgController = TextEditingController();
+    final priceController = TextEditingController(text: '1500000');
+    bool isAllInclusive = false;
+    List<String> selectedBills = [];
     bool isSavingRoom = false;
     bool isUploadingRoomPhoto = false;
     double roomPhotoUploadProgress = 0.0;
@@ -655,6 +715,56 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                 ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Harga Kamar per Bulan (Rp)',
+                  hintText: 'Contoh: 1500000',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('All-Inclusive (Bundling Tagihan)'),
+                value: isAllInclusive,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  setModalState(() {
+                    isAllInclusive = val;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (isAllInclusive) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    'Pilih Tagihan yang Termasuk:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ),
+                ..._availableBills.map((bill) {
+                  final isSelected = selectedBills.contains(bill);
+                  return CheckboxListTile(
+                    title: Text(bill),
+                    value: isSelected,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    onChanged: (val) {
+                      setModalState(() {
+                        if (val == true) {
+                          selectedBills.add(bill);
+                        } else {
+                          selectedBills.remove(bill);
+                        }
+                      });
+                    },
+                  );
+                }),
+              ],
               const SizedBox(height: 16),
               const Text(
                 'Foto Kamar',
@@ -778,6 +888,9 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                                   roomNumber: nameController.text,
                                   description: descController.text,
                                   imageUrl: imgController.text,
+                                  price: double.tryParse(priceController.text) ?? 0.0,
+                                  isAllInclusive: isAllInclusive,
+                                  allInclusiveBills: isAllInclusive ? selectedBills.join(',') : '',
                                 );
                             if (success) {
                               _loadRooms();
@@ -922,21 +1035,6 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Price
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Harga Sewa per Bulan (Rp)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                      ),
-                      validator: (val) {
-                        if (val == null || val.isEmpty) return 'Harga wajib diisi';
-                        if (double.tryParse(val) == null) return 'Harga tidak valid';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
 
                     // Location dropdown
                     DropdownButtonFormField<String>(
@@ -1101,46 +1199,6 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // All Inclusive Switch & Checkboxes
-                    SwitchListTile(
-                      title: const Text('All-Inclusive (Bundling Tagihan)'),
-                      value: _isAllInclusive,
-                      activeColor: AppColors.primary,
-                      onChanged: (val) {
-                        setState(() {
-                          _isAllInclusive = val;
-                        });
-                      },
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    if (_isAllInclusive) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'Pilih Tagihan yang Termasuk:',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      ..._availableBills.map((bill) {
-                        final isSelected = _selectedBills.contains(bill);
-                        return CheckboxListTile(
-                          title: Text(bill),
-                          value: isSelected,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          onChanged: (val) {
-                            setState(() {
-                              if (val == true) {
-                                _selectedBills.add(bill);
-                              } else {
-                                _selectedBills.remove(bill);
-                              }
-                            });
-                          },
-                        );
-                      }),
-                    ],
 
                     const SizedBox(height: 32),
 

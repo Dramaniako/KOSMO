@@ -292,7 +292,15 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
       );
 
       if (success) {
+        final authUser = ref.read(authProvider).user;
+        if (authUser != null && authUser.role == 'tenant') {
+          await ref.read(authProvider.notifier).upgradeRole('landlord');
+        }
+
         ref.invalidate(landlordProvider);
+        ref.invalidate(landlordTenantsProvider);
+        ref.invalidate(landlordTransactionsProvider);
+        ref.invalidate(landlordReviewsProvider);
         ref.invalidate(searchProvider);
 
         if (!mounted) return;

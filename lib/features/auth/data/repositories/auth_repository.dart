@@ -24,15 +24,20 @@ class AuthRepository {
       if (results.rows.isEmpty) return null;
 
       final row = results.rows.first;
-      final storedHash = row.colByName('password_hash');
+      final storedHash = row.colByName('password');
       final inputHash = _hashPassword(password);
 
-      if (storedHash == inputHash) {
+      if (storedHash == inputHash || storedHash == password) {
         return UserEntity(
-          id: int.tryParse(row.colByName('id') ?? ''),
+          id: int.tryParse(row.colByName('id_int') ?? ''),
           name: row.colByName('name') ?? '',
           email: row.colByName('email') ?? '',
           isVerified: row.colByName('is_verified') == '1',
+          role: row.colByName('role') ?? 'tenant',
+          age: row.colByName('age') != null ? int.tryParse(row.colByName('age')!) : null,
+          phoneNumber: row.colByName('phone'),
+          gender: row.colByName('gender'),
+          address: row.colByName('address'),
         );
       }
       return null;
@@ -53,12 +58,12 @@ class AuthRepository {
       // 2. Hash password and insert
       final passwordHash = _hashPassword(password);
       final result = await conn.execute(
-        'INSERT INTO users (name, email, password_hash, is_verified) '
-        'VALUES (:name, :email, :password_hash, 0)',
+        'INSERT INTO users (name, email, password, is_verified, role) '
+        'VALUES (:name, :email, :password, 0, "tenant")',
         {
           'name': name,
           'email': email,
-          'password_hash': passwordHash,
+          'password': passwordHash,
         },
       );
 
@@ -68,6 +73,7 @@ class AuthRepository {
           name: name,
           email: email,
           isVerified: false,
+          role: 'tenant',
         );
       }
       return null;
@@ -79,6 +85,44 @@ class AuthRepository {
       final result = await conn.execute(
         'UPDATE users SET is_verified = 1 WHERE email = :email',
         {'email': email},
+      );
+      return result.affectedRows > BigInt.zero;
+    });
+  }
+
+  Future<bool> updateProfile({
+    required int id,
+    required String name,
+    required int age,
+    required String phoneNumber,
+    required String gender,
+    required String address,
+  }) async {
+    return _mysqlService.run((conn) async {
+      final result = await conn.execute(
+        'UPDATE users SET name = :name, age = :age, phone = :phone, '
+        'gender = :gender, address = :address WHERE id_int = :id',
+        {
+          'id': id,
+          'name': name,
+          'age': age,
+          'phone': phoneNumber,
+          'gender': gender,
+          'address': address,
+        },
+      );
+      return result.affectedRows > BigInt.zero;
+    });
+  }
+
+  Future<bool> upgradeRole(int id, String newRole) async {
+    return _mysqlService.run((conn) async {
+      final result = await conn.execute(
+        'UPDATE users SET role = :role WHERE id_int = :id',
+        {
+          'id': id,
+          'role': newRole,
+        },
       );
       return result.affectedRows > BigInt.zero;
     });

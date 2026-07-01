@@ -86,13 +86,13 @@ final searchProvider = FutureProvider<List<PropertyEntity>>((ref) async {
     }
 
     // Price Range Filter
-    if (prop.price < filters.minPrice || prop.price > filters.maxPrice) {
+    if (prop.maxPrice < filters.minPrice || prop.minPrice > filters.maxPrice) {
       return false;
     }
 
     // All-Inclusive Filter
     if (filters.allInclusiveOnly) {
-      if (!prop.isAllInclusive) {
+      if (!prop.hasAllInclusive) {
         return false;
       }
     }

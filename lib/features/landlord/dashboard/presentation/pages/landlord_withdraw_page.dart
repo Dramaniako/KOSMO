@@ -76,6 +76,9 @@ class _LandlordWithdrawPageState extends ConsumerState<LandlordWithdrawPage> {
 
           // Refresh states
           ref.invalidate(landlordProvider);
+          ref.invalidate(landlordTenantsProvider);
+          ref.invalidate(landlordTransactionsProvider);
+          ref.invalidate(landlordReviewsProvider);
           ref.invalidate(withdrawalsProvider);
 
           if (mounted) {

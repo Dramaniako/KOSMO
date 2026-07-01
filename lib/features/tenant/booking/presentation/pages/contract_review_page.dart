@@ -107,7 +107,7 @@ class _ContractReviewPageState extends State<ContractReviewPage> {
                     const SizedBox(height: 16),
                     const Text('Pasal 2: Jangka Waktu & Harga', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text('Sewa menyewa ini dilangsungkan untuk jangka waktu 1 bulan, dengan harga ${widget.property.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"} sebesar Rp ${_formatCurrency(widget.property.price)} / bulan.'),
+                    Text('Sewa menyewa ini dilangsungkan untuk jangka waktu 1 bulan, dengan harga ${widget.room.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"} sebesar Rp ${_formatCurrency(widget.room.price)} / bulan.'),
                     const SizedBox(height: 16),
                     const Text('Pasal 3: Tanggung Jawab', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),

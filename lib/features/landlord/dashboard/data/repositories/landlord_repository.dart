@@ -16,8 +16,10 @@ class LandlordRepository {
       // 1. Fetch properties with occupied_rooms derived from rooms table
       final propResults = await conn.execute(
         'SELECT p.*, '
-        '(SELECT COUNT(*) FROM rooms r WHERE r.property_id = p.id AND r.tenant_id IS NOT NULL) AS real_occupied_rooms '
-        'FROM properties p WHERE p.owner_id = :owner_id',
+        '(SELECT COUNT(*) FROM rooms r WHERE r.property_id = p.id_int AND r.tenant_id IS NOT NULL) AS real_occupied_rooms, '
+        '(SELECT COALESCE(MIN(r.price), 0.0) FROM rooms r WHERE r.property_id = p.id_int) AS min_price, '
+        '(SELECT r.all_inclusive_bills FROM rooms r WHERE r.property_id = p.id_int LIMIT 1) AS first_room_bills '
+        'FROM properties p WHERE p.owner_id_int = :owner_id',
         {'owner_id': ownerId},
       );
       final properties = <LandlordPropertyModel>[];
@@ -25,23 +27,23 @@ class LandlordRepository {
       int occupiedRoomsSum = 0;
       
       for (var row in propResults.rows) {
-        final propertyId = int.tryParse(row.colByName('id') ?? '0') ?? 0;
-        final title = row.colByName('title') ?? '';
+        final propertyId = int.tryParse(row.colByName('id_int') ?? '0') ?? 0;
+        final title = row.colByName('name') ?? '';
         final address = row.colByName('address') ?? '';
-        final totalRooms = int.tryParse(row.colByName('total_rooms') ?? '0') ?? 0;
+        final totalRooms = int.tryParse(row.colByName('totalRooms') ?? '0') ?? 0;
         // Use the real occupied count from rooms table
         final occupiedRooms = int.tryParse(row.colByName('real_occupied_rooms') ?? '0') ?? 0;
-        final imageUrl = row.colByName('image_url') ?? '';
+        final imageUrl = row.colByName('image') ?? '';
         final description = row.colByName('description') ?? '';
-        final allInclusiveBills = row.colByName('all_inclusive_bills') ?? '';
-        final price = double.tryParse(row.colByName('price') ?? '0') ?? 0.0;
+        final allInclusiveBills = row.colByName('first_room_bills') ?? '';
+        final price = double.tryParse(row.colByName('min_price') ?? '0') ?? 0.0;
         
         totalRoomsSum += totalRooms;
         occupiedRoomsSum += occupiedRooms;
 
         // Sync occupied_rooms column in properties table to match rooms table
         await conn.execute(
-          'UPDATE properties SET occupied_rooms = :occupied WHERE id = :id',
+          'UPDATE properties SET occupiedRooms = :occupied WHERE id_int = :id',
           {'occupied': occupiedRooms, 'id': propertyId},
         );
         
@@ -58,11 +60,11 @@ class LandlordRepository {
         ));
       }
 
-      // 2. Fetch transactions for revenue
+      // 2. Fetch transactions for revenue (using property_id foreign key)
       final transResults = await conn.execute(
         "SELECT SUM(t.amount) as total_rev FROM transactions t "
-        "JOIN properties p ON t.property_name LIKE CONCAT(p.title, '%') "
-        "WHERE p.owner_id = :owner_id AND t.status = 'success'",
+        "JOIN properties p ON t.property_id = p.id_int "
+        "WHERE p.owner_id_int = :owner_id AND t.status = 'success'",
         {'owner_id': ownerId},
       );
       double totalRevenue = 0.0;
@@ -76,7 +78,7 @@ class LandlordRepository {
       // 2b. Fetch withdrawals for totalWithdrawn
       final withdrawResults = await conn.execute(
         "SELECT SUM(w.amount) as total_withdrawn FROM withdrawals w "
-        "WHERE w.landlord_id = :owner_id AND w.status = 'success'",
+        "WHERE w.landlord_id_int = :owner_id AND w.status IN ('success', 'Selesai')",
         {'owner_id': ownerId},
       );
       double totalWithdrawn = 0.0;
@@ -123,25 +125,22 @@ class LandlordRepository {
     String? allInclusiveBills,
   }) async {
     return _mysqlService.run((conn) async {
-      // 1. Insert the property
+      // 1. Insert the property (without price & billing)
       final result = await conn.execute(
-        "INSERT INTO properties (owner_id, title, address, location, price, rating, latitude, longitude, total_rooms, occupied_rooms, image_url, is_all_inclusive, description, all_inclusive_bills) "
-        "VALUES (:owner_id, :title, :address, :location, :price, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :is_all_inclusive, :description, :all_inclusive_bills)",
+        "INSERT INTO properties (owner_id_int, name, address, district, rating, latitude, longitude, totalRooms, occupiedRooms, image, description) "
+        "VALUES (:owner_id, :title, :address, :location, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :description)",
         {
           'owner_id': ownerId,
           'title': title,
           'address': address,
           'location': location,
-          'price': price,
           'rating': 0.0,
           'latitude': latitude,
           'longitude': longitude,
           'total_rooms': totalRooms,
           'occupied_rooms': occupiedRooms,
           'image_url': imageUrl,
-          'is_all_inclusive': isAllInclusive ? 1 : 0,
           'description': description,
-          'all_inclusive_bills': allInclusiveBills,
         },
       );
 
@@ -151,14 +150,18 @@ class LandlordRepository {
         final newPropertyId = int.parse(idResult.rows.first.colByName('new_id') ?? '0');
 
         if (newPropertyId > 0) {
-          // 3. Auto-create rooms for the new property
+          // 3. Auto-create rooms for the new property, saving default price & bills to rooms table
           for (int i = 1; i <= totalRooms; i++) {
             final roomNumber = 'Kamar ${100 + i}';
             await conn.execute(
-              "INSERT INTO rooms (property_id, room_number, tenant_id) VALUES (:propertyId, :roomNumber, NULL)",
+              "INSERT INTO rooms (property_id, room_number, tenant_id, price, is_all_inclusive, all_inclusive_bills) "
+              "VALUES (:propertyId, :roomNumber, NULL, :price, :isAllInclusive, :allInclusiveBills)",
               {
                 'propertyId': newPropertyId,
                 'roomNumber': roomNumber,
+                'price': price,
+                'isAllInclusive': isAllInclusive ? 1 : 0,
+                'allInclusiveBills': allInclusiveBills,
               },
             );
           }
@@ -174,30 +177,23 @@ class LandlordRepository {
     required String title,
     required String address,
     required String location,
-    required double price,
     required String imageUrl,
-    required bool isAllInclusive,
     required int totalRooms,
     required String description,
-    String? allInclusiveBills,
   }) async {
     return _mysqlService.run((conn) async {
       // 1. Update the property details
       final result = await conn.execute(
-        "UPDATE properties SET title = :title, address = :address, location = :location, price = :price, "
-        "image_url = :image_url, is_all_inclusive = :is_all_inclusive, total_rooms = :total_rooms, "
-        "description = :description, all_inclusive_bills = :all_inclusive_bills WHERE id = :id",
+        "UPDATE properties SET name = :title, address = :address, district = :location, "
+        "image = :image_url, totalRooms = :total_rooms, description = :description WHERE id_int = :id",
         {
           'id': id,
           'title': title,
           'address': address,
           'location': location,
-          'price': price,
           'image_url': imageUrl,
-          'is_all_inclusive': isAllInclusive ? 1 : 0,
           'total_rooms': totalRooms,
           'description': description,
-          'all_inclusive_bills': allInclusiveBills,
         },
       );
 
@@ -209,14 +205,32 @@ class LandlordRepository {
       final currentCount = int.parse(countResult.rows.first.colByName('cnt') ?? '0');
 
       if (totalRooms > currentCount) {
+        // Fetch default pricing/billing from first room of this property
+        double defaultPrice = 1500000.0;
+        int defaultIsAllInclusive = 1;
+        String? defaultBills = 'Listrik,Air';
+        final firstRoom = await conn.execute(
+          "SELECT price, is_all_inclusive, all_inclusive_bills FROM rooms WHERE property_id = :id LIMIT 1",
+          {"id": id},
+        );
+        if (firstRoom.rows.isNotEmpty) {
+          defaultPrice = double.tryParse(firstRoom.rows.first.colByName('price') ?? '1500000.0') ?? 1500000.0;
+          defaultIsAllInclusive = int.tryParse(firstRoom.rows.first.colByName('is_all_inclusive') ?? '1') ?? 1;
+          defaultBills = firstRoom.rows.first.colByName('all_inclusive_bills');
+        }
+
         // Add vacant rooms
         for (int i = currentCount + 1; i <= totalRooms; i++) {
           final roomNumber = 'Kamar ${100 + i}';
           await conn.execute(
-            "INSERT INTO rooms (property_id, room_number, tenant_id) VALUES (:propertyId, :roomNumber, NULL)",
+            "INSERT INTO rooms (property_id, room_number, tenant_id, price, is_all_inclusive, all_inclusive_bills) "
+            "VALUES (:propertyId, :roomNumber, NULL, :price, :isAllInclusive, :allInclusiveBills)",
             {
               'propertyId': id,
               'roomNumber': roomNumber,
+              'price': defaultPrice,
+              'isAllInclusive': defaultIsAllInclusive,
+              'allInclusiveBills': defaultBills,
             },
           );
         }
@@ -241,9 +255,9 @@ class LandlordRepository {
 
       // 3. Recalculate occupied_rooms
       await conn.execute(
-        "UPDATE properties SET occupied_rooms = "
+        "UPDATE properties SET occupiedRooms = "
         "(SELECT COUNT(*) FROM rooms WHERE property_id = :id AND tenant_id IS NOT NULL) "
-        "WHERE id = :id",
+        "WHERE id_int = :id",
         {"id": id},
       );
 
@@ -255,7 +269,7 @@ class LandlordRepository {
     return _mysqlService.run((conn) async {
       final results = await conn.execute(
         "SELECT r.*, u.name as tenant_name FROM rooms r "
-        "LEFT JOIN users u ON r.tenant_id = u.id "
+        "LEFT JOIN users u ON r.tenant_id = u.id_int "
         "WHERE r.property_id = :propertyId ORDER BY r.room_number ASC",
         {"propertyId": propertyId},
       );
@@ -270,6 +284,9 @@ class LandlordRepository {
           description: row.colByName('description') ?? '',
           imageUrl: row.colByName('image_url') ?? '',
           tenantName: row.colByName('tenant_name'),
+          price: double.tryParse(row.colByName('price') ?? '0') ?? 0.0,
+          isAllInclusive: row.colByName('is_all_inclusive') == '1',
+          allInclusiveBills: row.colByName('all_inclusive_bills'),
         ));
       }
       return list;
@@ -281,15 +298,22 @@ class LandlordRepository {
     required String roomNumber,
     required String description,
     required String imageUrl,
+    required double price,
+    required bool isAllInclusive,
+    String? allInclusiveBills,
   }) async {
     return _mysqlService.run((conn) async {
       final result = await conn.execute(
-        "UPDATE rooms SET room_number = :roomNumber, description = :description, image_url = :image_url WHERE id = :roomId",
+        "UPDATE rooms SET room_number = :roomNumber, description = :description, image_url = :image_url, "
+        "price = :price, is_all_inclusive = :isAllInclusive, all_inclusive_bills = :allInclusiveBills WHERE id = :roomId",
         {
           "roomId": roomId,
           "roomNumber": roomNumber,
           "description": description,
           "image_url": imageUrl,
+          "price": price,
+          "isAllInclusive": isAllInclusive ? 1 : 0,
+          "allInclusiveBills": allInclusiveBills,
         },
       );
       return result.affectedRows > BigInt.zero;
@@ -301,23 +325,29 @@ class LandlordRepository {
     required String roomNumber,
     required String description,
     required String imageUrl,
+    required double price,
+    required bool isAllInclusive,
+    String? allInclusiveBills,
   }) async {
     return _mysqlService.run((conn) async {
       final insertResult = await conn.execute(
-        "INSERT INTO rooms (property_id, room_number, tenant_id, description, image_url) "
-        "VALUES (:propertyId, :roomNumber, NULL, :description, :imageUrl)",
+        "INSERT INTO rooms (property_id, room_number, tenant_id, description, image_url, price, is_all_inclusive, all_inclusive_bills) "
+        "VALUES (:propertyId, :roomNumber, NULL, :description, :imageUrl, :price, :isAllInclusive, :allInclusiveBills)",
         {
           "propertyId": propertyId,
           "roomNumber": roomNumber,
           "description": description,
           "imageUrl": imageUrl,
+          "price": price,
+          "isAllInclusive": isAllInclusive ? 1 : 0,
+          "allInclusiveBills": allInclusiveBills,
         },
       );
       if (insertResult.affectedRows == BigInt.zero) return false;
 
       await conn.execute(
-        "UPDATE properties SET total_rooms = (SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId) "
-        "WHERE id = :propertyId",
+        "UPDATE properties SET totalRooms = (SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId) "
+        "WHERE id_int = :propertyId",
         {"propertyId": propertyId},
       );
       return true;
@@ -336,8 +366,8 @@ class LandlordRepository {
       if (deleteResult.affectedRows == BigInt.zero) return false;
 
       await conn.execute(
-        "UPDATE properties SET total_rooms = (SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId) "
-        "WHERE id = :propertyId",
+        "UPDATE properties SET totalRooms = (SELECT COUNT(*) FROM rooms WHERE property_id = :propertyId) "
+        "WHERE id_int = :propertyId",
         {"propertyId": propertyId},
       );
       return true;
@@ -348,14 +378,14 @@ class LandlordRepository {
   Future<bool> verifyPassword(int userId, String password) async {
     return _mysqlService.run((conn) async {
       final results = await conn.execute(
-        'SELECT password_hash FROM users WHERE id = :id',
+        'SELECT password FROM users WHERE id_int = :id',
         {'id': userId},
       );
       if (results.rows.isEmpty) return false;
 
-      final storedHash = results.rows.first.colByName('password_hash') ?? '';
+      final storedHash = results.rows.first.colByName('password') ?? '';
       final inputHash = sha256.convert(utf8.encode(password)).toString();
-      return storedHash == inputHash;
+      return storedHash == inputHash || storedHash == password;
     });
   }
 
@@ -364,7 +394,7 @@ class LandlordRepository {
     return _mysqlService.run((conn) async {
       // Rooms are deleted automatically via ON DELETE CASCADE
       final result = await conn.execute(
-        'DELETE FROM properties WHERE id = :id',
+        'DELETE FROM properties WHERE id_int = :id',
         {'id': propertyId},
       );
       return result.affectedRows > BigInt.zero;
@@ -375,18 +405,18 @@ class LandlordRepository {
   Future<List<WithdrawalModel>> getWithdrawals(int landlordId) async {
     return _mysqlService.run((conn) async {
       final results = await conn.execute(
-        'SELECT * FROM withdrawals WHERE landlord_id = :landlordId ORDER BY id DESC',
+        'SELECT * FROM withdrawals WHERE landlord_id_int = :landlordId ORDER BY id_int DESC',
         {'landlordId': landlordId},
       );
       final withdrawals = <WithdrawalModel>[];
       for (var row in results.rows) {
         withdrawals.add(WithdrawalModel.fromJson({
-          'id': int.parse(row.colByName('id')!),
-          'landlord_id': int.parse(row.colByName('landlord_id')!),
+          'id': int.parse(row.colByName('id_int')!),
+          'landlord_id': int.parse(row.colByName('landlord_id_int')!),
           'amount': double.parse(row.colByName('amount')!),
-          'bank_name': row.colByName('bank_name') ?? '',
-          'account_number': row.colByName('account_number') ?? '',
-          'date_str': row.colByName('date_str') ?? '',
+          'bank_name': row.colByName('bankName') ?? '',
+          'account_number': row.colByName('accountNumber') ?? '',
+          'date_str': row.colByName('date') ?? '',
           'status': row.colByName('status') ?? '',
         }));
       }
@@ -411,7 +441,7 @@ class LandlordRepository {
       final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
       
       final result = await conn.execute(
-        'INSERT INTO withdrawals (landlord_id, amount, bank_name, account_number, date_str, status) '
+        'INSERT INTO withdrawals (landlord_id_int, amount, bankName, accountNumber, date, status) '
         'VALUES (:landlordId, :amount, :bankName, :accountNumber, :dateStr, :status)',
         {
           'landlordId': landlordId,
@@ -420,6 +450,67 @@ class LandlordRepository {
           'accountNumber': accountNumber,
           'dateStr': dateStr,
           'status': 'success',
+        },
+      );
+      return result.affectedRows > BigInt.zero;
+    });
+  }
+
+  /// Get all tenants renting properties from this landlord
+  Future<List<Map<String, dynamic>>> getTenantsForLandlord(int landlordId) async {
+    return _mysqlService.run((conn) async {
+      final results = await conn.execute(
+        "SELECT r.id as room_id, r.room_number, u.id_int as tenant_id, u.name as tenant_name, "
+        "u.email as tenant_email, u.phone as phone_number, u.gender, u.age, u.address as tenant_address, p.name as property_title, p.id_int as property_id "
+        "FROM rooms r "
+        "JOIN properties p ON r.property_id = p.id_int "
+        "JOIN users u ON r.tenant_id = u.id_int "
+        "WHERE p.owner_id_int = :landlordId",
+        {"landlordId": landlordId},
+      );
+      final list = <Map<String, dynamic>>[];
+      for (var row in results.rows) {
+        list.add({
+          'room_id': int.parse(row.colByName('room_id')!),
+          'room_number': row.colByName('room_number') ?? '',
+          'tenant_id': int.parse(row.colByName('tenant_id')!),
+          'tenant_name': row.colByName('tenant_name') ?? '',
+          'tenant_email': row.colByName('tenant_email') ?? '',
+          'phone_number': row.colByName('phone_number') ?? '',
+          'gender': row.colByName('gender') ?? '',
+          'age': int.tryParse(row.colByName('age') ?? '') ?? 0,
+          'tenant_address': row.colByName('tenant_address') ?? '',
+          'property_title': row.colByName('property_title') ?? '',
+          'property_id': int.parse(row.colByName('property_id')!),
+        });
+      }
+      return list;
+    });
+  }
+
+  /// Add landlord review for a tenant
+  Future<bool> addTenantReview({
+    required int landlordId,
+    required int tenantId,
+    required double rating,
+    required String comment,
+  }) async {
+    return _mysqlService.run((conn) async {
+      final now = DateTime.now();
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
+      final result = await conn.execute(
+        "INSERT INTO reviews_tenants (landlord_id, tenant_id, rating, comment, date_str) "
+        "VALUES (:landlordId, :tenantId, :rating, :comment, :dateStr)",
+        {
+          "landlordId": landlordId,
+          "tenantId": tenantId,
+          "rating": rating,
+          "comment": comment,
+          "dateStr": dateStr,
         },
       );
       return result.affectedRows > BigInt.zero;

@@ -5,9 +5,9 @@ class PropertyCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String location;
-  final double price;
+  final double minPrice;
+  final double maxPrice;
   final double rating;
-  final bool isAllInclusive;
   final VoidCallback? onTap;
 
   const PropertyCard({
@@ -15,14 +15,18 @@ class PropertyCard extends StatelessWidget {
     required this.imageUrl,
     required this.title,
     required this.location,
-    required this.price,
+    required this.minPrice,
+    required this.maxPrice,
     required this.rating,
-    this.isAllInclusive = true,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final priceText = minPrice == maxPrice
+        ? 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} Jt'
+        : 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} - ${(maxPrice / 1000000).toStringAsFixed(1)} Jt';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -88,39 +92,6 @@ class PropertyCard extends StatelessWidget {
                           ),
                   ),
                 ),
-                if (isAllInclusive)
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.electric_bolt_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'All-Inclusive',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 Positioned(
                   top: 12,
                   right: 12,
@@ -204,12 +175,15 @@ class PropertyCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        'Rp ${(price / 1000000).toStringAsFixed(1)} Jt',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                      Expanded(
+                        child: Text(
+                          priceText,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const Text(

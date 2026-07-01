@@ -67,7 +67,7 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
           builder: (context) => PaymentGatewayPortalPage(
             property: widget.property,
             room: widget.room,
-            amount: widget.property.price + 50000.0,
+            amount: widget.room.price + 50000.0,
             paymentMethod: _selectedMethod,
             bankCode: _selectedMethod == 'va' ? _selectedBank : null,
             signaturePoints: widget.signaturePoints,
@@ -201,7 +201,7 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          _buildSummaryRow('Biaya Sewa Bulanan', 'Rp ${_formatCurrency(widget.property.price)}'),
+          _buildSummaryRow('Biaya Sewa Bulanan', 'Rp ${_formatCurrency(widget.room.price)}'),
           const SizedBox(height: 8),
           _buildSummaryRow('Biaya Layanan & Administrasi', 'Rp 50.000'),
           const SizedBox(height: 16),
@@ -215,7 +215,7 @@ class _PaymentCheckoutPageState extends State<PaymentCheckoutPage> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               Text(
-                'Rp ${_formatCurrency(widget.property.price + 50000.0)}',
+                'Rp ${_formatCurrency(widget.room.price + 50000.0)}',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
               ),
             ],

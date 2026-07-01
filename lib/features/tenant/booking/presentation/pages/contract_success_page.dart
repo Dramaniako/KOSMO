@@ -367,7 +367,7 @@ class _ContractSuccessPageState extends ConsumerState<ContractSuccessPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Sewa menyewa dilangsungkan untuk jangka waktu 1 bulan, terhitung dari tanggal pembayaran pertama untuk ${widget.property.title} (${widget.room.roomNumber}). Harga sewa yang disepakati adalah sebesar Rp ${_formatCurrency(widget.property.price)},- / bulan dengan sistem ${widget.property.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"}.',
+            'Sewa menyewa dilangsungkan untuk jangka waktu 1 bulan, terhitung dari tanggal pembayaran pertama untuk ${widget.property.title} (${widget.room.roomNumber}). Harga sewa yang disepakati adalah sebesar Rp ${_formatCurrency(widget.room.price)},- / bulan dengan sistem ${widget.room.isAllInclusive ? "All-Inclusive" : "tidak termasuk air/listrik"}.',
             style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, height: 1.4),
             textAlign: TextAlign.justify,
           ),

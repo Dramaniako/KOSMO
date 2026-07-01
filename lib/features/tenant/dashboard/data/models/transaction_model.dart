@@ -8,6 +8,8 @@ class TransactionModel {
   final String propertyName;
   final int? userId;
   final String transactionType; // 'rental', 'monthly', 'arrears'
+  final int? propertyId;
+  final int? roomId;
 
   const TransactionModel({
     required this.date,
@@ -17,6 +19,8 @@ class TransactionModel {
     required this.propertyName,
     this.userId,
     this.transactionType = 'rental',
+    this.propertyId,
+    this.roomId,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -37,12 +41,14 @@ class TransactionModel {
 
     return TransactionModel(
       date: json['date'] as String,
-      invoiceNumber: json['invoiceNumber'] as String,
+      invoiceNumber: json['invoiceNumber'] as String? ?? json['invoice_number'] as String,
       amount: (json['amount'] as num).toDouble(),
       status: status,
-      propertyName: json['propertyName'] as String,
-      userId: json['userId'] as int?,
-      transactionType: json['transactionType'] as String? ?? 'rental',
+      propertyName: json['propertyName'] as String? ?? json['property_name'] as String,
+      userId: json['userId'] as int? ?? json['user_id'] as int?,
+      transactionType: json['transactionType'] as String? ?? json['transaction_type'] as String? ?? 'rental',
+      propertyId: json['propertyId'] as int? ?? json['property_id'] as int?,
+      roomId: json['roomId'] as int? ?? json['room_id'] as int?,
     );
   }
 
@@ -68,6 +74,8 @@ class TransactionModel {
       'propertyName': propertyName,
       'userId': userId,
       'transactionType': transactionType,
+      'propertyId': propertyId,
+      'roomId': roomId,
     };
   }
 }

@@ -385,9 +385,9 @@ class _SearchPageState extends ConsumerState<SearchPage>
           imageUrl: prop.imageUrl,
           title: prop.title,
           location: prop.location,
-          price: prop.price,
+          minPrice: prop.minPrice,
+          maxPrice: prop.maxPrice,
           rating: prop.rating,
-          isAllInclusive: prop.isAllInclusive,
           onTap: () {
             Navigator.push(
               context,
@@ -544,7 +544,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
                             Positioned(
                               top: isHighlighted ? 14 : 11,
                               child: Text(
-                                'Rp ${(prop.price / 1000000).toStringAsFixed(1)} Jt',
+                                'Rp ${(prop.minPrice / 1000000).toStringAsFixed(1)} Jt',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: isHighlighted ? 10 : 8,
@@ -888,9 +888,11 @@ class _SearchPageState extends ConsumerState<SearchPage>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Rp ${(prop.price / 1000000).toStringAsFixed(1)} Jt / bln',
+                          prop.minPrice == prop.maxPrice
+                              ? 'Rp ${(prop.minPrice / 1000000).toStringAsFixed(1)} Jt / bln'
+                              : 'Rp ${(prop.minPrice / 1000000).toStringAsFixed(1)} - ${(prop.maxPrice / 1000000).toStringAsFixed(1)} Jt / bln',
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primary,
                           ),

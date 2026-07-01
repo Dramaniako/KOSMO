@@ -5,6 +5,7 @@ import '../../../../auth/presentation/pages/kyc_intro_page.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../landlord/dashboard/presentation/providers/landlord_provider.dart';
 import '../../../booking/presentation/pages/contract_review_page.dart';
+import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../../data/models/room_model.dart';
 import '../../domain/entities/property_entity.dart';
 
@@ -94,12 +95,12 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
   @override
   Widget build(BuildContext context) {
     final property = widget.property;
-    final priceJt = (property.price / 1000000).toStringAsFixed(1);
-
-    // Parse all inclusive bills
-    final List<String> bills = property.allInclusiveBills != null && property.allInclusiveBills!.isNotEmpty
-        ? property.allInclusiveBills!.split(',')
-        : [];
+    final String priceText;
+    if (property.minPrice == property.maxPrice) {
+      priceText = 'Rp ${(property.minPrice / 1000000).toStringAsFixed(1)} Jt';
+    } else {
+      priceText = 'Rp ${(property.minPrice / 1000000).toStringAsFixed(1)} - ${(property.maxPrice / 1000000).toStringAsFixed(1)} Jt';
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -233,10 +234,10 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(
-                              'Rp $priceJt Jt',
+                             Text(
+                              priceText,
                               style: const TextStyle(
-                                fontSize: 22,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
                               ),
@@ -278,70 +279,6 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // All inclusive bills
-                  if (property.isAllInclusive) ...[
-                    const Text(
-                      'Fasilitas All-Inclusive',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue.shade100),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.bolt_rounded, color: Colors.blue, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'Bebas biaya tambahan untuk tagihan berikut:',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          if (bills.isEmpty)
-                            const Text(
-                              '• Termasuk biaya Listrik & Air standard sewa.',
-                              style: TextStyle(fontSize: 13, color: Colors.blueGrey),
-                            )
-                          else
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: bills.map((bill) {
-                                return Chip(
-                                  avatar: const Icon(Icons.check_circle_outline, color: Colors.blue, size: 14),
-                                  label: Text(
-                                    bill,
-                                    style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                  backgroundColor: Colors.white,
-                                  side: BorderSide(color: Colors.blue.shade200),
-                                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                                );
-                              }).toList(),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
 
                   // Room List Header
                   const Text(
@@ -490,34 +427,171 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 12),
-                                        Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: SizedBox(
-                                            height: 32,
-                                            child: ElevatedButton(
-                                              onPressed: isOccupied ? null : () => _onRentTapped(room),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColors.primary,
-                                                disabledBackgroundColor: Colors.grey.shade300,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                elevation: 0,
-                                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Rp ${_formatCurrency(room.price)} / bln',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.w900,
+                                                      color: AppColors.primary,
+                                                    ),
+                                                  ),
+                                                  if (room.isAllInclusive)
+                                                    Text(
+                                                      'Termasuk: ${room.allInclusiveBills ?? "Listrik, Air"}',
+                                                      style: const TextStyle(
+                                                        fontSize: 9,
+                                                        fontWeight: FontWeight.w500,
+                                                        color: Colors.blue,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                ],
                                               ),
-                                              child: Text(
-                                                isOccupied ? 'Sudah Terisi' : 'Sewa Kamar Ini',
-                                                style: TextStyle(
-                                                  color: isOccupied ? Colors.grey.shade600 : Colors.white,
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            SizedBox(
+                                              height: 32,
+                                              child: ElevatedButton(
+                                                onPressed: isOccupied ? null : () => _onRentTapped(room),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.primary,
+                                                  disabledBackgroundColor: Colors.grey.shade300,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  elevation: 0,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                ),
+                                                child: Text(
+                                                  isOccupied ? 'Sudah Terisi' : 'Sewa',
+                                                  style: TextStyle(
+                                                    color: isOccupied ? Colors.grey.shade600 : Colors.white,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
+                                          ],
                                         ),
                                       ],
                                     ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Ulasan Properti',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: ref.read(propertyRepositoryProvider).getReviewsForProperty(widget.property.id),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Text('Gagal memuat ulasan: ${snapshot.error}');
+                      }
+                      final reviews = snapshot.data ?? [];
+                      if (reviews.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            'Belum ada ulasan untuk kos ini.',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: reviews.length,
+                        itemBuilder: (context, index) {
+                          final review = reviews[index];
+                          final String reviewerName = review['user_name'] ?? 'Pengguna';
+                          final double rating = review['rating'] ?? 0.0;
+                          final String comment = review['comment'] ?? '';
+                          final String dateStr = review['date_str'] ?? '';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                      child: const Icon(Icons.person_rounded, size: 12, color: AppColors.primary),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      reviewerName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                    const Spacer(),
+                                    Row(
+                                      children: List.generate(5, (starIdx) {
+                                        return Icon(
+                                          starIdx < rating.floor()
+                                              ? Icons.star_rounded
+                                              : Icons.star_border_rounded,
+                                          color: AppColors.accent,
+                                          size: 14,
+                                        );
+                                      }),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      rating.toStringAsFixed(1),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  comment,
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                ),
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    dateStr,
+                                    style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
                                   ),
                                 ),
                               ],

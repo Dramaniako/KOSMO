@@ -6,6 +6,9 @@ class RoomModel {
   final String description;
   final String imageUrl;
   final String? tenantName; // optional field populated via JOIN
+  final double price;
+  final bool isAllInclusive;
+  final String? allInclusiveBills;
 
   RoomModel({
     required this.id,
@@ -15,6 +18,9 @@ class RoomModel {
     required this.description,
     required this.imageUrl,
     this.tenantName,
+    this.price = 0.0,
+    this.isAllInclusive = true,
+    this.allInclusiveBills,
   });
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +32,9 @@ class RoomModel {
       description: json['description'] as String? ?? '',
       imageUrl: json['image_url'] as String? ?? '',
       tenantName: json['tenant_name'] as String?,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      isAllInclusive: (json['is_all_inclusive'] as num?)?.toInt() == 1 || json['is_all_inclusive'] == true,
+      allInclusiveBills: json['all_inclusive_bills'] as String?,
     );
   }
 
@@ -38,6 +47,9 @@ class RoomModel {
       'description': description,
       'image_url': imageUrl,
       'tenant_name': tenantName,
+      'price': price,
+      'is_all_inclusive': isAllInclusive ? 1 : 0,
+      'all_inclusive_bills': allInclusiveBills,
     };
   }
 }

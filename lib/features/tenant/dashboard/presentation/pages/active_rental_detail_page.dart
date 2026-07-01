@@ -183,9 +183,9 @@ class _ActiveRentalDetailPageState
 
                           // 2. Recalculate occupied_rooms
                           await conn.execute(
-                            "UPDATE properties SET occupied_rooms = "
+                            "UPDATE properties SET occupiedRooms = "
                             "(SELECT COUNT(*) FROM rooms WHERE property_id = :propId AND tenant_id IS NOT NULL) "
-                            "WHERE id = :propId",
+                            "WHERE id_int = :propId",
                             {"propId": widget.activeRental.propertyId},
                           );
                         });
@@ -195,6 +195,9 @@ class _ActiveRentalDetailPageState
                         ref.invalidate(activeRentalProvider);
                         ref.invalidate(searchProvider);
                         ref.invalidate(landlordProvider);
+                        ref.invalidate(landlordTenantsProvider);
+                        ref.invalidate(landlordTransactionsProvider);
+                        ref.invalidate(landlordReviewsProvider);
 
                         if (!mounted) return;
                         Navigator.pop(ctx); // pop password dialog

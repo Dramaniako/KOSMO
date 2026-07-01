@@ -30,6 +30,9 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
       
       // Invalidate landlord stats and search results reactively on success
       ref.invalidate(landlordProvider);
+      ref.invalidate(landlordTenantsProvider);
+      ref.invalidate(landlordTransactionsProvider);
+      ref.invalidate(landlordReviewsProvider);
       ref.invalidate(searchProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -45,6 +48,9 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
       
       // Invalidate landlord stats reactively on success
       ref.invalidate(landlordProvider);
+      ref.invalidate(landlordTenantsProvider);
+      ref.invalidate(landlordTransactionsProvider);
+      ref.invalidate(landlordReviewsProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -94,11 +100,11 @@ final activeRentalProvider = FutureProvider<ActiveRental?>((ref) async {
   final mysqlService = ref.watch(mysqlServiceProvider);
   return mysqlService.run((conn) async {
     final results = await conn.execute(
-      "SELECT r.id as room_id, r.property_id, p.title, p.price, r.room_number, r.description, r.image_url, "
-      "p.address, u.name as landlord_name, u.email as landlord_email, p.all_inclusive_bills "
+      "SELECT r.id as room_id, r.property_id, p.name as title, r.price, r.room_number, r.description, r.image_url, "
+      "p.address, u.name as landlord_name, u.email as landlord_email, r.all_inclusive_bills "
       "FROM rooms r "
-      "JOIN properties p ON r.property_id = p.id "
-      "JOIN users u ON p.owner_id = u.id "
+      "JOIN properties p ON r.property_id = p.id_int "
+      "JOIN users u ON p.owner_id_int = u.id_int "
       "WHERE r.tenant_id = :userId "
       "LIMIT 1",
       {"userId": userId},

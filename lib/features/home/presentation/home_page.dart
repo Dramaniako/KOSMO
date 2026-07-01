@@ -153,9 +153,9 @@ class HomePage extends ConsumerWidget {
                           );
 
                           await conn.execute(
-                            "UPDATE properties SET occupied_rooms = "
+                            "UPDATE properties SET occupiedRooms = "
                             "(SELECT COUNT(*) FROM rooms WHERE property_id = :propId AND tenant_id IS NOT NULL) "
-                            "WHERE id = :propId",
+                            "WHERE id_int = :propId",
                             {"propId": activeRental.propertyId},
                           );
                         });
@@ -164,6 +164,9 @@ class HomePage extends ConsumerWidget {
                         ref.invalidate(activeRentalProvider);
                         ref.invalidate(searchProvider);
                         ref.invalidate(landlordProvider);
+                        ref.invalidate(landlordTenantsProvider);
+                        ref.invalidate(landlordTransactionsProvider);
+                        ref.invalidate(landlordReviewsProvider);
 
                         Navigator.pop(ctx); // pop password dialog
                         ScaffoldMessenger.of(context).showSnackBar(

@@ -4,14 +4,14 @@ class PropertyEntity {
   final String title;
   final String location;
   final String address;
-  final double price;
+  final double minPrice;
+  final double maxPrice;
   final double rating;
-  final bool isAllInclusive;
-  final String? allInclusiveBills;
   final String imageUrl;
   final double latitude;
   final double longitude;
   final String description;
+  final bool hasAllInclusive;
 
   const PropertyEntity({
     required this.id,
@@ -19,13 +19,13 @@ class PropertyEntity {
     required this.title,
     required this.location,
     required this.address,
-    required this.price,
+    required this.minPrice,
+    required this.maxPrice,
     required this.rating,
-    required this.isAllInclusive,
-    this.allInclusiveBills,
     required this.imageUrl,
     required this.latitude,
     required this.longitude,
     required this.description,
+    this.hasAllInclusive = false,
   });
 }

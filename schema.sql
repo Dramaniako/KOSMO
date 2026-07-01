@@ -2,6 +2,9 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS reviews_tenants;
+DROP TABLE IF EXISTS reviews_kos;
+DROP TABLE IF EXISTS withdrawals;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS rooms;
 DROP TABLE IF EXISTS properties;
@@ -13,7 +16,12 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    is_verified TINYINT(1) DEFAULT 0
+    is_verified TINYINT(1) DEFAULT 0,
+    role VARCHAR(50) DEFAULT 'tenant',
+    age INT DEFAULT NULL,
+    phone_number VARCHAR(50) DEFAULT NULL,
+    gender VARCHAR(20) DEFAULT NULL,
+    address TEXT DEFAULT NULL
 );
 
 -- 2. Create properties table
@@ -23,10 +31,7 @@ CREATE TABLE IF NOT EXISTS properties (
     title VARCHAR(255) NOT NULL,
     location VARCHAR(255) NOT NULL,
     address TEXT NOT NULL,
-    price DECIMAL(12,2) NOT NULL,
     rating DECIMAL(2,1) DEFAULT 0.0,
-    is_all_inclusive TINYINT(1) DEFAULT 1,
-    all_inclusive_bills VARCHAR(500) DEFAULT NULL,
     image_url VARCHAR(500),
     latitude DOUBLE NOT NULL,
     longitude DOUBLE NOT NULL,
@@ -44,6 +49,9 @@ CREATE TABLE IF NOT EXISTS rooms (
     tenant_id INT DEFAULT NULL,
     description TEXT DEFAULT NULL,
     image_url VARCHAR(500) DEFAULT NULL,
+    price DECIMAL(12,2) NOT NULL DEFAULT 0.0,
+    is_all_inclusive TINYINT(1) DEFAULT 1,
+    all_inclusive_bills VARCHAR(500) DEFAULT NULL,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
     FOREIGN KEY (tenant_id) REFERENCES users(id) ON DELETE SET NULL,
     UNIQUE KEY unique_property_room (property_id, room_number)
@@ -59,48 +67,14 @@ CREATE TABLE IF NOT EXISTS transactions (
     property_name VARCHAR(255) NOT NULL,
     user_id INT DEFAULT NULL,
     transaction_type VARCHAR(100) DEFAULT 'rental',
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    property_id INT DEFAULT NULL,
+    room_id INT DEFAULT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL,
+    FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
 );
 
--- 4. Seed initial users
-TRUNCATE TABLE users;
-INSERT INTO users (name, email, password_hash, is_verified) VALUES
-('Budi Santoso', 'budi@email.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 1),
-('Landlord Kosmo', 'landlord@email.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 1);
-
--- 5. Seed initial properties (Bali locations & coordinates)
-TRUNCATE TABLE properties;
-INSERT INTO properties (id, owner_id, title, location, address, price, rating, is_all_inclusive, all_inclusive_bills, image_url, latitude, longitude, total_rooms, occupied_rooms, description) VALUES
-(1, 2, 'Kos Eksklusif Mawar', 'Badung', 'Jl. Sunset Road No. 45, Kuta, Badung, Bali', 2500000.0, 4.8, 1, 'Listrik,Air,WiFi', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.7225, 115.1825, 10, 0, 'Kos mewah dengan fasilitas lengkap di pusat kota Sunset Road. Dekat dengan mall, restoran, dan pantai Kuta. Dilengkapi AC, water heater, kasur springbed queen size, lemari pakaian, meja belajar, dan dapur pribadi.'),
-(2, 2, 'Kos Mahasiswa Udayana', 'Badung', 'Jl. Kampus Unud, Jimbaran, Badung, Bali', 1500000.0, 4.5, 0, NULL, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.7980, 115.1700, 15, 0, 'Kos khusus mahasiswa Udayana dengan harga sangat terjangkau. Lokasi strategis dekat dengan fakultas teknik dan kedokteran hewan. Fasilitas AC, kamar mandi dalam, kasur single, dan wifi berkecepatan tinggi.'),
-(3, 2, 'Premium Residence Ubud', 'Gianyar', 'Jl. Raya Ubud No. 12, Ubud, Gianyar, Bali', 4500000.0, 4.9, 1, 'Air,WiFi,Kebersihan,Keamanan', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.5069, 115.2625, 12, 1, 'Premium residence di jantung keindahan alam Ubud. Kamar luas dengan pemandangan sawah yang asri. Suasana sangat tenang, cocok untuk remote worker. Fasilitas kolam renang bersama, AC, mini bar, dan hot tub.'),
-(4, 2, 'KOSMO Hub Denpasar', 'Denpasar', 'Jl. Teuku Umar No. 14, Denpasar, Bali', 3500000.0, 4.7, 1, 'Listrik,Air,WiFi,Kebersihan,Keamanan,Parkir', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400', -8.6500, 115.2166, 5, 0, 'Modern co-living space di Denpasar dengan konsep smart home. Dilengkapi dengan communal area luas, rooftop area, cafe, gym kecil, dan coworking space untuk penghuni. Fasilitas smart lock, AC, smart TV.');
-
--- 5b. Seed initial rooms
-TRUNCATE TABLE rooms;
-INSERT INTO rooms (property_id, room_number, tenant_id, description, image_url) VALUES
-(1, 'Kamar 101', NULL, 'Kamar standar dengan ventilasi udara segar.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400'),
-(1, 'Kamar 102', NULL, 'Kamar standar menghadap ke taman.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400'),
-(1, 'Kamar 103', NULL, 'Kamar standar dekat dengan area parkir.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400'),
-(2, 'Kamar A', NULL, 'Kamar mahasiswa ekonomis dengan kamar mandi dalam.', 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=400'),
-(2, 'Kamar B', NULL, 'Kamar mahasiswa ekonomis dekat area jemuran.', 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=400'),
-(3, 'Kamar 2A', 1, 'Kamar premium dengan pemandangan sawah langsung.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400'),
-(3, 'Kamar 2B', NULL, 'Kamar premium dekat area kolam renang.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400'),
-(3, 'Kamar 2C', NULL, 'Kamar premium lantai dua dengan balkon luas.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400'),
-(4, 'Room 1', NULL, 'Co-living room dengan fasilitas smart lock.', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400'),
-(4, 'Room 2', NULL, 'Co-living room dengan pencahayaan alami yang baik.', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400');
-
--- 6. Seed initial transactions
-TRUNCATE TABLE transactions;
-INSERT INTO transactions (invoice_number, date_str, amount, status, property_name, user_id, transaction_type) VALUES
-('INV-KSM-0526-001', '5 Mei 2026', 4500000.0, 'failed', 'Premium Residence Ubud (Kamar 2A)', 1, 'arrears'),
-('INV-KSM-0426-001', '5 Apr 2026', 4500000.0, 'success', 'Premium Residence Ubud (Kamar 2A)', 1, 'monthly'),
-('INV-KSM-0326-001', '5 Mar 2026', 4550000.0, 'success', 'Premium Residence Ubud (Kamar 2A)', 1, 'rental');
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- 7. Create withdrawals table
-DROP TABLE IF EXISTS withdrawals;
+-- 4. Create withdrawals table
 CREATE TABLE IF NOT EXISTS withdrawals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     landlord_id INT NOT NULL,
@@ -112,3 +86,63 @@ CREATE TABLE IF NOT EXISTS withdrawals (
     FOREIGN KEY (landlord_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 5. Create reviews_kos table
+CREATE TABLE IF NOT EXISTS reviews_kos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    property_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating DECIMAL(2,1) NOT NULL,
+    comment TEXT DEFAULT NULL,
+    date_str VARCHAR(100) NOT NULL,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 6. Create reviews_tenants table
+CREATE TABLE IF NOT EXISTS reviews_tenants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    landlord_id INT NOT NULL,
+    tenant_id INT NOT NULL,
+    rating DECIMAL(2,1) NOT NULL,
+    comment TEXT DEFAULT NULL,
+    date_str VARCHAR(100) NOT NULL,
+    FOREIGN KEY (landlord_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (tenant_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 7. Seed initial users
+TRUNCATE TABLE users;
+INSERT INTO users (name, email, password_hash, is_verified, role, age, phone_number, gender, address) VALUES
+('Budi Santoso', 'budi@email.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 1, 'tenant', 22, '+62811111111', 'Laki-laki', 'Jl. Hayam Wuruk No. 5, Denpasar'),
+('Landlord Kosmo', 'landlord@email.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 1, 'landlord', 45, '+628123456789', 'Laki-laki', 'Jl. Sunset Road No. 10, Badung, Bali');
+
+-- 8. Seed initial properties (Bali locations & coordinates)
+TRUNCATE TABLE properties;
+INSERT INTO properties (id, owner_id, title, location, address, rating, image_url, latitude, longitude, total_rooms, occupied_rooms, description) VALUES
+(1, 2, 'Kos Eksklusif Mawar', 'Badung', 'Jl. Sunset Road No. 45, Kuta, Badung, Bali', 4.8, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.7225, 115.1825, 3, 0, 'Kos mewah dengan fasilitas lengkap di pusat kota Sunset Road. Dekat dengan mall, restoran, dan pantai Kuta. Dilengkapi AC, water heater, kasur springbed queen size, lemari pakaian, meja belajar, dan dapur pribadi.'),
+(2, 2, 'Kos Mahasiswa Udayana', 'Badung', 'Jl. Kampus Unud, Jimbaran, Badung, Bali', 4.5, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.7980, 115.1700, 2, 0, 'Kos khusus mahasiswa Udayana dengan harga sangat terjangkau. Lokasi strategis dekat dengan fakultas teknik dan kedokteran hewan. Fasilitas AC, kamar mandi dalam, kasur single, dan wifi berkecepatan tinggi.'),
+(3, 2, 'Premium Residence Ubud', 'Gianyar', 'Jl. Raya Ubud No. 12, Ubud, Gianyar, Bali', 4.9, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', -8.5069, 115.2625, 3, 1, 'Premium residence di jantung keindahan alam Ubud. Kamar luas dengan pemandangan sawah yang asri. Suasana sangat tenang, cocok untuk remote worker. Fasilitas kolam renang bersama, AC, mini bar, dan hot tub.'),
+(4, 2, 'KOSMO Hub Denpasar', 'Denpasar', 'Jl. Teuku Umar No. 14, Denpasar, Bali', 4.7, 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400', -8.6500, 115.2166, 2, 0, 'Modern co-living space di Denpasar dengan konsep smart home. Dilengkapi dengan communal area luas, rooftop area, cafe, gym kecil, dan coworking space untuk penghuni. Fasilitas smart lock, AC, smart TV.');
+
+-- 9. Seed initial rooms with room-specific pricing & bills
+TRUNCATE TABLE rooms;
+INSERT INTO rooms (id, property_id, room_number, tenant_id, description, image_url, price, is_all_inclusive, all_inclusive_bills) VALUES
+(1, 1, 'Kamar 101', NULL, 'Kamar standar dengan ventilasi udara segar.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400', 2500000.0, 1, 'Listrik,Air,WiFi'),
+(2, 1, 'Kamar 102', NULL, 'Kamar deluxe dengan balkon luas.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400', 2800000.0, 1, 'Listrik,Air,WiFi,Kebersihan'),
+(3, 1, 'Kamar 103', NULL, 'Kamar standar dekat dengan area parkir.', 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400', 2500000.0, 1, 'Listrik,Air,WiFi'),
+(4, 2, 'Kamar A', NULL, 'Kamar mahasiswa ekonomis dengan kamar mandi dalam.', 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=400', 1500000.0, 0, NULL),
+(5, 2, 'Kamar B', NULL, 'Kamar mahasiswa ekonomis dekat area jemuran.', 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=400', 1500000.0, 0, NULL),
+(6, 3, 'Kamar 2A', 1, 'Kamar premium dengan pemandangan sawah langsung.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400', 4500000.0, 1, 'Air,WiFi,Kebersihan,Keamanan'),
+(7, 3, 'Kamar 2B', NULL, 'Kamar premium dekat area kolam renang.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400', 4500000.0, 1, 'Air,WiFi,Kebersihan,Keamanan'),
+(8, 3, 'Kamar 2C', NULL, 'Kamar premium lantai dua dengan balkon luas.', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=400', 4500000.0, 1, 'Air,WiFi,Kebersihan,Keamanan'),
+(9, 4, 'Room 1', NULL, 'Co-living room dengan fasilitas smart lock.', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', 3500000.0, 1, 'Listrik,Air,WiFi,Kebersihan,Keamanan,Parkir'),
+(10, 4, 'Room 2', NULL, 'Co-living room dengan pencahayaan alami yang baik.', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=400', 3500000.0, 1, 'Listrik,Air,WiFi,Kebersihan,Keamanan,Parkir');
+
+-- 10. Seed initial transactions linked to property_id and room_id
+TRUNCATE TABLE transactions;
+INSERT INTO transactions (invoice_number, date_str, amount, status, property_name, user_id, transaction_type, property_id, room_id) VALUES
+('INV-KSM-0526-001', '5 Mei 2026', 4500000.0, 'failed', 'Premium Residence Ubud (Kamar 2A)', 1, 'arrears', 3, 6),
+('INV-KSM-0426-001', '5 Apr 2026', 4500000.0, 'success', 'Premium Residence Ubud (Kamar 2A)', 1, 'monthly', 3, 6),
+('INV-KSM-0326-001', '5 Mar 2026', 4550000.0, 'success', 'Premium Residence Ubud (Kamar 2A)', 1, 'rental', 3, 6);
+
+SET FOREIGN_KEY_CHECKS = 1;
