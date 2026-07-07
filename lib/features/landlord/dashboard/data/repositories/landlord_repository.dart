@@ -60,35 +60,20 @@ class LandlordRepository {
         ));
       }
 
-      // 2. Fetch transactions for revenue (using property_id foreign key)
-      final transResults = await conn.execute(
-        "SELECT SUM(t.amount) as total_rev FROM transactions t "
-        "JOIN properties p ON t.property_id = p.id_int "
-        "WHERE p.owner_id_int = :owner_id AND t.status = 'success'",
+      // 2. Fetch landlord user data directly for financial source of truth
+      final userResults = await conn.execute(
+        "SELECT balance, totalRevenue, totalWithdrawn FROM users WHERE id_int = :owner_id",
         {'owner_id': ownerId},
       );
+      double balance = 0.0;
       double totalRevenue = 0.0;
-      if (transResults.rows.isNotEmpty) {
-        final totalRevStr = transResults.rows.first.colByName('total_rev');
-        if (totalRevStr != null) {
-          totalRevenue = double.tryParse(totalRevStr) ?? 0.0;
-        }
-      }
-
-      // 2b. Fetch withdrawals for totalWithdrawn
-      final withdrawResults = await conn.execute(
-        "SELECT SUM(w.amount) as total_withdrawn FROM withdrawals w "
-        "WHERE w.landlord_id_int = :owner_id AND w.status IN ('success', 'Selesai')",
-        {'owner_id': ownerId},
-      );
       double totalWithdrawn = 0.0;
-      if (withdrawResults.rows.isNotEmpty) {
-        final totalWithdrawnStr = withdrawResults.rows.first.colByName('total_withdrawn');
-        if (totalWithdrawnStr != null) {
-          totalWithdrawn = double.tryParse(totalWithdrawnStr) ?? 0.0;
-        }
+      if (userResults.rows.isNotEmpty) {
+        final row = userResults.rows.first;
+        balance = double.tryParse(row.colByName('balance') ?? '0') ?? 0.0;
+        totalRevenue = double.tryParse(row.colByName('totalRevenue') ?? '0') ?? 0.0;
+        totalWithdrawn = double.tryParse(row.colByName('totalWithdrawn') ?? '0') ?? 0.0;
       }
-      double balance = totalRevenue - totalWithdrawn;
 
       // Calculate occupancy rate
       double occupancyPercent = 0;

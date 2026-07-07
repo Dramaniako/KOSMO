@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../properties/presentation/widgets/landlord_property_card.dart';
 import '../../../properties/presentation/pages/add_property_page.dart';
@@ -12,6 +13,9 @@ import 'landlord_withdraw_page.dart';
 import '../../../properties/presentation/pages/landlord_profile_setup_page.dart';
 import '../../data/models/landlord_stats_model.dart';
 import '../../data/models/landlord_property_model.dart';
+
+// Backend API base URL (update when deploying)
+const String _apiBase = 'http://localhost:5000/api';
 
 class LandlordDashboardPage extends ConsumerStatefulWidget {
   const LandlordDashboardPage({super.key});
@@ -32,6 +36,24 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
       buffer.write(valStr[i]);
     }
     return 'Rp ${buffer.toString()}';
+  }
+
+  Future<void> _downloadExcelReport() async {
+    final userId = ref.read(authProvider).user?.id;
+    if (userId == null) return;
+    final url = Uri.parse('$_apiBase/reports/landlord/excel?landlordId=$userId');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak dapat membuka link download.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   /// Layer 1: "Are you sure?" confirmation dialog
@@ -325,6 +347,13 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
         elevation: 1,
         automaticallyImplyLeading: Navigator.canPop(context),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+            tooltip: 'Unduh Laporan Keuangan (Excel)',
+            onPressed: _downloadExcelReport,
+          ),
+        ],
       ),
       body: landlordState.when(
         data: (stats) {

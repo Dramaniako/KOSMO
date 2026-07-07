@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../tenant/search/data/models/room_model.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
@@ -80,71 +82,67 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
   ];
 
   void _pickPropertyPhoto() async {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-               'Pilih Foto Properti',
-               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _mockImages.map((img) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _uploadPropertyPhoto(img['url']!);
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      img['url']!,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image == null) return;
 
-  void _uploadPropertyPhoto(String url) async {
     setState(() {
       _isUploadingPropertyPhoto = true;
       _propertyPhotoUploadProgress = 0.0;
     });
 
-    for (int i = 1; i <= 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
+    try {
+      final dio = dio_pkg.Dio();
+      final formData = dio_pkg.FormData.fromMap({
+        'image': await dio_pkg.MultipartFile.fromFile(
+          image.path,
+          filename: image.name,
+        ),
+      });
+
+      final response = await dio.post(
+        'http://localhost:5000/api/upload',
+        data: formData,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            setState(() {
+              _propertyPhotoUploadProgress = sent / total;
+            });
+          }
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final url = response.data['url'] as String;
+        setState(() {
+          _imageUrlController.text = url;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto properti berhasil diperbarui!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Gagal mengunggah foto');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error unggah foto: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
       setState(() {
-        _propertyPhotoUploadProgress = i / 10.0;
+        _isUploadingPropertyPhoto = false;
       });
     }
-
-    setState(() {
-      _isUploadingPropertyPhoto = false;
-      _imageUrlController.text = url;
-    });
   }
 
   @override

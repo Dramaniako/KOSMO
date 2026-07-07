@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/user_entity.dart';
 import '../../../auth/presentation/pages/login_page.dart';
@@ -8,11 +9,14 @@ import 'help_center_page.dart';
 import 'notification_settings_page.dart';
 import 'terms_page.dart';
 
+const String _apiBase = 'http://localhost:5000/api';
+
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -27,7 +31,7 @@ class ProfilePage extends ConsumerWidget {
             children: [
               const SizedBox(height: 32),
               // Profile Header
-              _buildProfileHeader(ref.watch(authProvider).user),
+              _buildProfileHeader(user),
               const SizedBox(height: 32),
               
               // Menu Sections
@@ -71,6 +75,31 @@ class ProfilePage extends ConsumerWidget {
                   MaterialPageRoute(builder: (context) => const TermsPage()),
                 ),
               ),
+
+              // Landlord-only: Download Financial Report
+              if (user != null && user.role == 'landlord') ...[
+                const SizedBox(height: 24),
+                _buildSectionTitle('Laporan'),
+                _buildMenuTile(
+                  context,
+                  Icons.download_rounded,
+                  'Unduh Laporan Keuangan (Excel)',
+                  'Cetak laporan properti & transaksi',
+                  () async {
+                    final url = Uri.parse('$_apiBase/reports/landlord/excel?landlordId=${user.id}');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tidak dapat membuka link download.'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
               
               const SizedBox(height: 40),
               

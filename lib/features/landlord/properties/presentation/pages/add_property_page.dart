@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
@@ -152,73 +154,69 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
   }
 
   void _pickPhoto() async {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-               'Pilih Foto Properti',
-               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _mockImages.map((img) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _uploadPhoto(img['url']!);
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      img['url']!,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image == null) return;
 
-  void _uploadPhoto(String url) async {
     setState(() {
       _isUploadingPhoto = true;
       _photoUploadProgress = 0.0;
       _uploadedPhotoUrl = null;
     });
 
-    for (int i = 1; i <= 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
+    try {
+      final dio = dio_pkg.Dio();
+      final formData = dio_pkg.FormData.fromMap({
+        'image': await dio_pkg.MultipartFile.fromFile(
+          image.path,
+          filename: image.name,
+        ),
+      });
+
+      final response = await dio.post(
+        'http://localhost:5000/api/upload',
+        data: formData,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            setState(() {
+              _photoUploadProgress = sent / total;
+            });
+          }
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final url = response.data['url'] as String;
+        setState(() {
+          _uploadedPhotoUrl = url;
+          _selectedImage = url;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto berhasil diunggah!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Gagal mengunggah foto');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error unggah foto: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
       setState(() {
-        _photoUploadProgress = i / 10.0;
+        _isUploadingPhoto = false;
       });
     }
-
-    setState(() {
-      _isUploadingPhoto = false;
-      _uploadedPhotoUrl = url;
-      _selectedImage = url;
-    });
   }
 
   void _openMapPicker() {
@@ -455,41 +453,26 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    // Coordinates (Lat, Lng) Inputs
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _latitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Latitude',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                    // Coordinates (Lat, Lng) Display
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Koordinat Peta: ${_latitudeController.text}, ${_longitudeController.text}',
+                              style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                             ),
-                            validator: (val) {
-                              if (val == null || val.isEmpty) return 'Wajib';
-                              if (double.tryParse(val) == null) return 'Tidak valid';
-                              return null;
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _longitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Longitude',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            ),
-                            validator: (val) {
-                              if (val == null || val.isEmpty) return 'Wajib';
-                              if (double.tryParse(val) == null) return 'Tidak valid';
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
 
