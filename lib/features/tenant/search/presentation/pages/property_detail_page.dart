@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong2.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/pages/kyc_intro_page.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
@@ -279,6 +281,53 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
                   ),
                   const SizedBox(height: 24),
 
+                  const Text(
+                    'Lokasi Properti',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: LatLng(property.latitude, property.longitude),
+                          initialZoom: 14.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.kosmo.app',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(property.latitude, property.longitude),
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.location_on_rounded,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
                   // Room List Header
                   const Text(

@@ -11,8 +11,8 @@ class PropertyRepository {
     return _mysqlService.run((conn) async {
       final results = await conn.execute(
         'SELECT p.*, '
-        '(SELECT COALESCE(MIN(r.price), 0.0) FROM rooms r WHERE r.property_id = p.id_int) AS min_price, '
-        '(SELECT COALESCE(MAX(r.price), 0.0) FROM rooms r WHERE r.property_id = p.id_int) AS max_price, '
+        'COALESCE((SELECT MIN(r.price) FROM rooms r WHERE r.property_id = p.id_int AND r.price > 0), CAST(p.price AS DOUBLE), 0.0) AS min_price, '
+        'COALESCE((SELECT MAX(r.price) FROM rooms r WHERE r.property_id = p.id_int AND r.price > 0), CAST(p.price AS DOUBLE), 0.0) AS max_price, '
         '(SELECT COUNT(*) FROM rooms r WHERE r.property_id = p.id_int AND r.is_all_inclusive = 1) > 0 AS has_all_inclusive '
         'FROM properties p'
       );
