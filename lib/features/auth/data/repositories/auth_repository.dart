@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bcrypt/bcrypt.dart';
 import '../../../../core/services/mysql_service.dart';
 import '../../domain/user_entity.dart';
 
@@ -24,10 +25,23 @@ class AuthRepository {
       if (results.rows.isEmpty) return null;
 
       final row = results.rows.first;
-      final storedHash = row.colByName('password');
+      final storedHash = row.colByName('password') ?? '';
       final inputHash = _hashPassword(password);
 
-      if (storedHash == inputHash || storedHash == password) {
+      bool isValid = false;
+      if (storedHash.startsWith('\$2a\$') || 
+          storedHash.startsWith('\$2b\$') || 
+          storedHash.startsWith('\$2y\$')) {
+        try {
+          isValid = BCrypt.checkpw(password, storedHash);
+        } catch (_) {
+          isValid = false;
+        }
+      } else {
+        isValid = (storedHash == inputHash || storedHash == password);
+      }
+
+      if (isValid) {
         return UserEntity(
           id: int.tryParse(row.colByName('id_int') ?? ''),
           name: row.colByName('name') ?? '',
