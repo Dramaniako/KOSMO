@@ -12,7 +12,7 @@ class MySqlService {
       userName: DbCredentials.user,
       password: DbCredentials.password,
       databaseName: DbCredentials.database,
-      secure: true,
+      secure: false,
     );
     await conn.connect();
     try {
