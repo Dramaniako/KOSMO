@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong2.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/pages/kyc_intro_page.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
