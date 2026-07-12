@@ -111,17 +111,26 @@ class LandlordRepository {
     String? allInclusiveBills,
   }) async {
     return _mysqlService.run((conn) async {
-      // 1. Insert the property (without price & billing)
+      // 1. Insert the property (specifying price & ownerId string)
+      final userRes = await conn.execute(
+        'SELECT id FROM users WHERE id_int = :ownerId LIMIT 1',
+        {'ownerId': ownerId},
+      );
+      if (userRes.rows.isEmpty) return false;
+      final ownerIdStr = userRes.rows.first.colByName('id') ?? '';
+
       final propIdStr = 'prop-${DateTime.now().millisecondsSinceEpoch}';
       final result = await conn.execute(
-        "INSERT INTO properties (id, owner_id_int, name, address, district, rating, latitude, longitude, totalRooms, occupiedRooms, image, description) "
-        "VALUES (:id, :owner_id, :title, :address, :location, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :description)",
+        "INSERT INTO properties (id, ownerId, owner_id_int, name, address, district, price, rating, latitude, longitude, totalRooms, occupiedRooms, image, description) "
+        "VALUES (:id, :ownerIdStr, :owner_id, :title, :address, :location, :price, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :description)",
         {
           'id': propIdStr,
+          'ownerIdStr': ownerIdStr,
           'owner_id': ownerId,
           'title': title,
           'address': address,
           'location': location,
+          'price': price.toInt(),
           'rating': 0.0,
           'latitude': latitude,
           'longitude': longitude,

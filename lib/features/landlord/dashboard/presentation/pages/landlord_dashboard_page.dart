@@ -15,7 +15,7 @@ import '../../data/models/landlord_stats_model.dart';
 import '../../data/models/landlord_property_model.dart';
 
 // Backend API base URL (update when deploying)
-const String _apiBase = 'http://localhost:5000/api';
+const String _apiBase = 'https://kosmo-landing-page-red.vercel.app/api';
 
 class LandlordDashboardPage extends ConsumerStatefulWidget {
   const LandlordDashboardPage({super.key});

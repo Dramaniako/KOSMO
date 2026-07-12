@@ -9,7 +9,7 @@ import 'help_center_page.dart';
 import 'notification_settings_page.dart';
 import 'terms_page.dart';
 
-const String _apiBase = 'http://localhost:5000/api';
+const String _apiBase = 'https://kosmo-landing-page-red.vercel.app/api';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

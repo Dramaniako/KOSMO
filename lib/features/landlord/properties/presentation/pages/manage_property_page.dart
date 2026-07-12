@@ -102,7 +102,7 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
       });
 
       final response = await dio.post(
-        'http://localhost:5000/api/upload',
+        'https://kosmo-landing-page-red.vercel.app/api/upload',
         data: formData,
         onSendProgress: (sent, total) {
           if (total > 0) {
