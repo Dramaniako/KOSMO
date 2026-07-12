@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class LandlordPropertyCard extends StatelessWidget {
   final String title;
@@ -52,10 +53,10 @@ class LandlordPropertyCard extends StatelessWidget {
                   height: 120,
                   width: double.infinity,
                   color: AppColors.border,
-                  child: Image.network(
-                    imageUrl,
+                  child: CustomImage(
+                    imageUrl: imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
+                    errorWidget: const Icon(
                       Icons.apartment_rounded,
                       size: 40,
                       color: AppColors.textSecondary,

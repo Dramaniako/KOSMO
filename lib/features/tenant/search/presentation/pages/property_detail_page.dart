@@ -10,6 +10,7 @@ import '../../../booking/presentation/pages/contract_review_page.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../../data/models/room_model.dart';
 import '../../domain/entities/property_entity.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class PropertyDetailPage extends ConsumerStatefulWidget {
   final PropertyEntity property;
@@ -115,17 +116,13 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
             backgroundColor: AppColors.primary,
             iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
-              background: property.imageUrl.isNotEmpty
-                  ? Image.network(
-                      property.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(Icons.broken_image_rounded, size: 64, color: Colors.white70),
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.home_work_rounded, size: 64, color: Colors.white70),
-                    ),
+              background: CustomImage(
+                imageUrl: property.imageUrl,
+                fit: BoxFit.cover,
+                errorWidget: const Center(
+                  child: Icon(Icons.home_work_rounded, size: 64, color: Colors.white70),
+                ),
+              ),
             ),
           ),
 
@@ -406,21 +403,15 @@ class _PropertyDetailPageState extends ConsumerState<PropertyDetailPage> {
                                     width: 110,
                                     height: 110,
                                     color: Colors.grey.shade100,
-                                    child: room.imageUrl.isNotEmpty
-                                        ? Image.network(
-                                            room.imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => const Icon(
-                                              Icons.bedroom_child_rounded,
-                                              size: 36,
-                                              color: Colors.grey,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.bedroom_child_rounded,
-                                            size: 36,
-                                            color: Colors.grey,
-                                          ),
+                                    child: CustomImage(
+                                      imageUrl: room.imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorWidget: const Icon(
+                                        Icons.bedroom_child_rounded,
+                                        size: 36,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ),
                                 ),
 

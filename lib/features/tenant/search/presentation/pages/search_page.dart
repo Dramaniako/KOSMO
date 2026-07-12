@@ -11,6 +11,7 @@ import '../../domain/entities/property_entity.dart';
 import '../providers/search_provider.dart';
 import '../widgets/property_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
@@ -775,17 +776,14 @@ class _SearchPageState extends ConsumerState<SearchPage>
                   width: 95,
                   height: double.infinity,
                   color: Colors.grey.shade200,
-                  child: prop.imageUrl.isNotEmpty
-                      ? Image.network(
-                          prop.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                            Icons.broken_image_rounded,
-                            color: Colors.grey,
-                          ),
-                        )
-                      : const Icon(Icons.home_work_rounded, color: Colors.grey),
+                  child: CustomImage(
+                    imageUrl: prop.imageUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: const Icon(
+                      Icons.broken_image_rounded,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
                 // Rating Badge
                 Positioned(

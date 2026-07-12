@@ -6,6 +6,7 @@ import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../landlord/dashboard/presentation/providers/landlord_provider.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class ActiveRentalDetailPage extends ConsumerStatefulWidget {
   final ActiveRental activeRental;
@@ -268,18 +269,14 @@ class _ActiveRentalDetailPageState
                 width: double.infinity,
                 height: 180,
                 color: Colors.grey.shade200,
-                child: rental.imageUrl.isNotEmpty
-                    ? Image.network(
-                        rental.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(
-                          child: Icon(Icons.broken_image_rounded,
-                              size: 64, color: Colors.grey),
-                        ),
-                      )
-                    : const Icon(Icons.home_work_rounded,
+                child: CustomImage(
+                  imageUrl: rental.imageUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: const Center(
+                    child: Icon(Icons.broken_image_rounded,
                         size: 64, color: Colors.grey),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class PropertyCard extends StatelessWidget {
   final String imageUrl;
@@ -23,30 +24,34 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final priceText = minPrice == maxPrice
-        ? 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} Jt'
-        : 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} - ${(maxPrice / 1000000).toStringAsFixed(1)} Jt';
+    final String priceText;
+    if (minPrice == maxPrice) {
+      priceText = 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} Jt';
+    } else {
+      priceText = 'Rp ${(minPrice / 1000000).toStringAsFixed(1)} - ${(maxPrice / 1000000).toStringAsFixed(1)} Jt';
+    }
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
+          border: Border.all(
+            color: AppColors.border,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section
             Stack(
               children: [
                 ClipRRect(
@@ -57,39 +62,17 @@ class PropertyCard extends StatelessWidget {
                     height: 160,
                     width: double.infinity,
                     color: Colors.grey.shade300,
-                    child: imageUrl.isNotEmpty
-                        ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Center(
-                                  child: Icon(
-                                    Icons.home_work_rounded,
-                                    size: 48,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value:
-                                      loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  strokeWidth: 2,
-                                ),
-                              );
-                            },
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.home_work_rounded,
-                              size: 48,
-                              color: Colors.white,
-                            ),
-                          ),
+                    child: CustomImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: const Center(
+                        child: Icon(
+                          Icons.home_work_rounded,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(

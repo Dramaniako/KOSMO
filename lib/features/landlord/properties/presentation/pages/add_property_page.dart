@@ -8,6 +8,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dashboard/presentation/providers/landlord_provider.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class AddPropertyPage extends ConsumerStatefulWidget {
   const AddPropertyPage({super.key});
@@ -575,18 +576,18 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                  _uploadedPhotoUrl!,
-                                  width: 64,
-                                  height: 64,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
+                                  child: CustomImage(
+                                    imageUrl: _uploadedPhotoUrl!,
                                     width: 64,
                                     height: 64,
-                                    color: Colors.grey.shade200,
-                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                    fit: BoxFit.cover,
+                                    errorWidget: Container(
+                                      width: 64,
+                                      height: 64,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                                    ),
                                   ),
-                                ),
                                 ),
                                 const SizedBox(width: 16),
                                 const Expanded(

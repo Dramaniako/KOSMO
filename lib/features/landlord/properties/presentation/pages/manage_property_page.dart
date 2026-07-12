@@ -7,6 +7,7 @@ import '../../../../tenant/search/data/models/room_model.dart';
 import '../../../../tenant/search/presentation/providers/search_provider.dart';
 import '../../../dashboard/data/models/landlord_property_model.dart';
 import '../../../dashboard/presentation/providers/landlord_provider.dart';
+import '../../../../../core/widgets/custom_image.dart';
 
 class ManagePropertyPage extends ConsumerStatefulWidget {
   final LandlordPropertyModel property;
@@ -312,12 +313,12 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        img['url']!,
+                      child: CustomImage(
+                        imageUrl: img['url']!,
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
+                        errorWidget: Container(
                           width: 80,
                           height: 80,
                           color: Colors.grey.shade200,
@@ -450,12 +451,12 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imgController.text,
+                            child: CustomImage(
+                              imageUrl: imgController.text,
                               width: 64,
                               height: 64,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
+                              errorWidget: Container(
                                 width: 64,
                                 height: 64,
                                 color: Colors.grey.shade200,
@@ -647,12 +648,12 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        img['url']!,
+                      child: CustomImage(
+                        imageUrl: img['url']!,
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
+                        errorWidget: Container(
                           width: 80,
                           height: 80,
                           color: Colors.grey.shade200,
@@ -785,12 +786,12 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imgController.text,
+                            child: CustomImage(
+                              imageUrl: imgController.text,
                               width: 64,
                               height: 64,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
+                              errorWidget: Container(
                                 width: 64,
                                 height: 64,
                                 color: Colors.grey.shade200,
@@ -1091,18 +1092,18 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
                                children: [
                                  ClipRRect(
                                    borderRadius: BorderRadius.circular(8),
-                                   child: Image.network(
-                                     _imageUrlController.text,
-                                     width: 64,
-                                     height: 64,
-                                     fit: BoxFit.cover,
-                                     errorBuilder: (context, error, stackTrace) => Container(
-                                       width: 64,
-                                       height: 64,
-                                       color: Colors.grey.shade200,
-                                       child: const Icon(Icons.broken_image, color: Colors.grey),
-                                     ),
-                                   ),
+                                    child: CustomImage(
+                                      imageUrl: _imageUrlController.text,
+                                      width: 64,
+                                      height: 64,
+                                      fit: BoxFit.cover,
+                                      errorWidget: Container(
+                                        width: 64,
+                                        height: 64,
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                                      ),
+                                    ),
                                  ),
                                  const SizedBox(width: 16),
                                  const Expanded(
