@@ -305,7 +305,7 @@ class _LandlordDashboardPageState extends ConsumerState<LandlordDashboardPage> {
         ref.invalidate(landlordTenantsProvider);
         ref.invalidate(landlordTransactionsProvider);
         ref.invalidate(landlordReviewsProvider);
-        ref.invalidate(searchProvider);
+        ref.invalidate(propertiesListProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

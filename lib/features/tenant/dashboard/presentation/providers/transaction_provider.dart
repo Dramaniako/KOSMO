@@ -33,7 +33,7 @@ class TransactionNotifier extends AsyncNotifier<List<TransactionModel>> {
       ref.invalidate(landlordTenantsProvider);
       ref.invalidate(landlordTransactionsProvider);
       ref.invalidate(landlordReviewsProvider);
-      ref.invalidate(searchProvider);
+      ref.invalidate(propertiesListProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

@@ -236,7 +236,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => ref.refresh(searchProvider),
+                      onPressed: () => ref.refresh(propertiesListProvider),
                       child: const Text('Coba Lagi'),
                     ),
                   ],

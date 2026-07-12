@@ -156,7 +156,11 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
 
   void _pickPhoto() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+      maxWidth: 800,
+    );
     
     if (image == null) return;
 
@@ -300,7 +304,7 @@ class _AddPropertyPageState extends ConsumerState<AddPropertyPage> {
         ref.invalidate(landlordTenantsProvider);
         ref.invalidate(landlordTransactionsProvider);
         ref.invalidate(landlordReviewsProvider);
-        ref.invalidate(searchProvider);
+        ref.invalidate(propertiesListProvider);
 
         if (!mounted) return;
         Navigator.pop(context);

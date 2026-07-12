@@ -59,11 +59,14 @@ final searchFiltersProvider = NotifierProvider<SearchFiltersNotifier, SearchFilt
   return SearchFiltersNotifier();
 });
 
-final searchProvider = FutureProvider<List<PropertyEntity>>((ref) async {
+final propertiesListProvider = FutureProvider<List<PropertyEntity>>((ref) async {
   final repository = ref.watch(propertyRepositoryProvider);
-  final filters = ref.watch(searchFiltersProvider);
+  return repository.getProperties();
+});
 
-  final allProperties = await repository.getProperties();
+final searchProvider = FutureProvider<List<PropertyEntity>>((ref) async {
+  final filters = ref.watch(searchFiltersProvider);
+  final allProperties = await ref.watch(propertiesListProvider.future);
 
   // 1. Filter locally
   var filtered = allProperties.where((prop) {

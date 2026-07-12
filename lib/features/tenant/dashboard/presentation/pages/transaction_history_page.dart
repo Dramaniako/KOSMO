@@ -144,7 +144,7 @@ class TransactionHistoryPage extends ConsumerWidget {
                             );
                         if (success) {
                           ref.invalidate(landlordReviewsProvider);
-                          ref.invalidate(searchProvider);
+                          ref.invalidate(propertiesListProvider);
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(

@@ -194,7 +194,7 @@ class _ActiveRentalDetailPageState
                         // 3. Refresh providers
                         ref.invalidate(transactionProvider);
                         ref.invalidate(activeRentalProvider);
-                        ref.invalidate(searchProvider);
+                        ref.invalidate(propertiesListProvider);
                         ref.invalidate(landlordProvider);
                         ref.invalidate(landlordTenantsProvider);
                         ref.invalidate(landlordTransactionsProvider);

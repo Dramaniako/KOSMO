@@ -162,7 +162,7 @@ class HomePage extends ConsumerWidget {
 
                         ref.invalidate(transactionProvider);
                         ref.invalidate(activeRentalProvider);
-                        ref.invalidate(searchProvider);
+                        ref.invalidate(propertiesListProvider);
                         ref.invalidate(landlordProvider);
                         ref.invalidate(landlordTenantsProvider);
                         ref.invalidate(landlordTransactionsProvider);

@@ -84,7 +84,11 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
 
   void _pickPropertyPhoto() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+      maxWidth: 800,
+    );
     
     if (image == null) return;
 
@@ -223,7 +227,7 @@ class _ManagePropertyPageState extends ConsumerState<ManagePropertyPage> {
         ref.invalidate(landlordTenantsProvider);
         ref.invalidate(landlordTransactionsProvider);
         ref.invalidate(landlordReviewsProvider);
-        ref.invalidate(searchProvider);
+        ref.invalidate(propertiesListProvider);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
