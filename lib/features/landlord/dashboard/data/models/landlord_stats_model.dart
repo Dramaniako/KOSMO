@@ -1,4 +1,5 @@
 import 'landlord_property_model.dart';
+import '../../../../tenant/dashboard/data/models/transaction_model.dart';
 
 class LandlordStatsModel {
   final double totalRevenue;
@@ -36,4 +37,18 @@ class LandlordStatsModel {
       properties: parsedProperties,
     );
   }
+}
+
+class LandlordDashboardData {
+  final LandlordStatsModel stats;
+  final List<Map<String, dynamic>> tenants;
+  final List<Map<String, dynamic>> reviews;
+  final List<TransactionModel> transactions;
+
+  const LandlordDashboardData({
+    required this.stats,
+    required this.tenants,
+    required this.reviews,
+    required this.transactions,
+  });
 }

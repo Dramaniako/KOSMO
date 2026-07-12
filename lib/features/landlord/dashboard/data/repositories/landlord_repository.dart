@@ -3,9 +3,10 @@ import 'package:crypto/crypto.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../../../../../core/services/mysql_service.dart';
 import '../../../../tenant/search/data/models/room_model.dart';
-import '../models/landlord_property_model.dart';
+import 'landlord_property_model.dart';
 import '../models/landlord_stats_model.dart';
 import '../models/withdrawal_model.dart';
+import '../../../../tenant/dashboard/data/models/transaction_model.dart';
 
 class LandlordRepository {
   final MySqlService _mysqlService;
@@ -41,12 +42,6 @@ class LandlordRepository {
         
         totalRoomsSum += totalRooms;
         occupiedRoomsSum += occupiedRooms;
-
-        // Sync occupied_rooms column in properties table to match rooms table
-        await conn.execute(
-          'UPDATE properties SET occupiedRooms = :occupied WHERE id_int = :id',
-          {'occupied': occupiedRooms, 'id': propertyId},
-        );
         
         properties.add(LandlordPropertyModel(
           id: propertyId,
@@ -91,6 +86,161 @@ class LandlordRepository {
         occupancyRate: '${occupancyPercent.round()}%',
         residentsLabel: '$occupiedRoomsSum Penghuni',
         properties: properties,
+      );
+    });
+  }
+
+  Future<LandlordDashboardData> getDashboardData(int ownerId) async {
+    return _mysqlService.run((conn) async {
+      // 1. Fetch properties
+      final propResults = await conn.execute(
+        'SELECT p.*, '
+        '(SELECT COUNT(*) FROM rooms r WHERE r.property_id = p.id_int AND r.tenant_id IS NOT NULL) AS real_occupied_rooms, '
+        '(SELECT COALESCE(MIN(r.price), 0.0) FROM rooms r WHERE r.property_id = p.id_int) AS min_price, '
+        '(SELECT r.all_inclusive_bills FROM rooms r WHERE r.property_id = p.id_int LIMIT 1) AS first_room_bills '
+        'FROM properties p WHERE p.owner_id_int = :owner_id',
+        {'owner_id': ownerId},
+      );
+      
+      final properties = <LandlordPropertyModel>[];
+      int totalRoomsSum = 0;
+      int occupiedRoomsSum = 0;
+      
+      for (var row in propResults.rows) {
+        final propertyId = int.tryParse(row.colByName('id_int') ?? '0') ?? 0;
+        final title = row.colByName('name') ?? '';
+        final address = row.colByName('address') ?? '';
+        final totalRooms = int.tryParse(row.colByName('totalRooms') ?? '0') ?? 0;
+        final occupiedRooms = int.tryParse(row.colByName('real_occupied_rooms') ?? '0') ?? 0;
+        final imageUrl = row.colByName('image') ?? '';
+        final description = row.colByName('description') ?? '';
+        final allInclusiveBills = row.colByName('first_room_bills') ?? '';
+        final price = double.tryParse(row.colByName('min_price') ?? '0') ?? 0.0;
+        
+        totalRoomsSum += totalRooms;
+        occupiedRoomsSum += occupiedRooms;
+        
+        properties.add(LandlordPropertyModel(
+          id: propertyId,
+          title: title,
+          address: address,
+          totalRooms: totalRooms,
+          occupiedRooms: occupiedRooms,
+          imageUrl: imageUrl,
+          description: description,
+          allInclusiveBills: allInclusiveBills,
+          price: price,
+        ));
+      }
+
+      // 2. Fetch landlord user data
+      final userResults = await conn.execute(
+        "SELECT balance, totalRevenue, totalWithdrawn FROM users WHERE id_int = :owner_id",
+        {'owner_id': ownerId},
+      );
+      double balance = 0.0;
+      double totalRevenue = 0.0;
+      double totalWithdrawn = 0.0;
+      if (userResults.rows.isNotEmpty) {
+        final row = userResults.rows.first;
+        balance = double.tryParse(row.colByName('balance') ?? '0') ?? 0.0;
+        totalRevenue = double.tryParse(row.colByName('totalRevenue') ?? '0') ?? 0.0;
+        totalWithdrawn = double.tryParse(row.colByName('totalWithdrawn') ?? '0') ?? 0.0;
+      }
+
+      double occupancyPercent = 0;
+      if (totalRoomsSum > 0) {
+        occupancyPercent = (occupiedRoomsSum / totalRoomsSum) * 100;
+      }
+
+      final stats = LandlordStatsModel(
+        totalRevenue: totalRevenue,
+        totalWithdrawn: totalWithdrawn,
+        balance: balance,
+        revenueChange: '+12%',
+        totalUnitsLabel: '${properties.length} Unit',
+        occupancyRate: '${occupancyPercent.round()}%',
+        residentsLabel: '$occupiedRoomsSum Penghuni',
+        properties: properties,
+      );
+
+      // 3. Fetch tenants
+      final tenantResults = await conn.execute(
+        "SELECT r.id as room_id, r.room_number, u.id_int as tenant_id, u.name as tenant_name, "
+        "u.email as tenant_email, u.phone as phone_number, u.gender, u.age, u.address as tenant_address, p.name as property_title, p.id_int as property_id "
+        "FROM rooms r "
+        "JOIN properties p ON r.property_id = p.id_int "
+        "JOIN users u ON r.tenant_id = u.id_int "
+        "WHERE p.owner_id_int = :landlordId",
+        {"landlordId": ownerId},
+      );
+      final tenantsList = <Map<String, dynamic>>[];
+      for (var row in tenantResults.rows) {
+        tenantsList.add({
+          'room_id': int.parse(row.colByName('room_id')!),
+          'room_number': row.colByName('room_number') ?? '',
+          'tenant_id': int.parse(row.colByName('tenant_id')!),
+          'tenant_name': row.colByName('tenant_name') ?? '',
+          'tenant_email': row.colByName('tenant_email') ?? '',
+          'phone_number': row.colByName('phone_number') ?? '',
+          'gender': row.colByName('gender') ?? '',
+          'age': int.tryParse(row.colByName('age') ?? '') ?? 0,
+          'tenant_address': row.colByName('tenant_address') ?? '',
+          'property_title': row.colByName('property_title') ?? '',
+          'property_id': int.parse(row.colByName('property_id')!),
+        });
+      }
+
+      // 4. Fetch reviews
+      final reviewResults = await conn.execute(
+        'SELECT r.*, u.name as user_name, p.name as property_title FROM reviews r '
+        'JOIN users u ON r.user_id_int = u.id_int '
+        'JOIN properties p ON r.property_id_int = p.id_int '
+        'WHERE p.owner_id_int = :landlordId ORDER BY r.id_int DESC',
+        {'landlordId': ownerId},
+      );
+      final reviewsList = <Map<String, dynamic>>[];
+      for (var row in reviewResults.rows) {
+        reviewsList.add({
+          'id': int.parse(row.colByName('id_int')!),
+          'property_id': int.parse(row.colByName('property_id_int')!),
+          'user_id': int.parse(row.colByName('user_id_int')!),
+          'rating': double.parse(row.colByName('rating')!),
+          'comment': row.colByName('comment'),
+          'date_str': row.colByName('date') ?? '',
+          'user_name': row.colByName('user_name') ?? '',
+          'property_title': row.colByName('property_title') ?? '',
+        });
+      }
+
+      // 5. Fetch transactions
+      final txResults = await conn.execute(
+        "SELECT t.* FROM transactions t "
+        "JOIN properties p ON t.property_id = p.id_int "
+        "WHERE p.owner_id_int = :landlordId AND t.status = 'success' "
+        "ORDER BY t.id DESC",
+        {"landlordId": ownerId},
+      );
+      final txList = <TransactionModel>[];
+      for (var row in txResults.rows) {
+        txList.add(TransactionModel(
+          date: row.colByName('date_str') ?? '',
+          invoiceNumber: row.colByName('invoice_number') ?? '',
+          amount: double.tryParse(row.colByName('amount') ?? '0') ?? 0.0,
+          status: TransactionStatus.success,
+          propertyName: row.colByName('property_name') ?? '',
+          userId: row.colByName('user_id') != null ? int.tryParse(row.colByName('user_id')!) : null,
+          transactionType: row.colByName('transaction_type') ?? 'rental',
+          propertyId: row.colByName('property_id') != null ? int.tryParse(row.colByName('property_id')!) : null,
+          roomId: row.colByName('room_id') != null ? int.tryParse(row.colByName('room_id')!) : null,
+        ));
+      }
+
+      return LandlordDashboardData(
+        stats: stats,
+        tenants: tenantsList,
+        reviews: reviewsList,
+        transactions: txList,
       );
     });
   }

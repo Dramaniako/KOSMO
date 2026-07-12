@@ -11,10 +11,12 @@ class PropertyRepository {
     return _mysqlService.run((conn) async {
       final results = await conn.execute(
         'SELECT p.*, '
-        'COALESCE((SELECT MIN(r.price) FROM rooms r WHERE r.property_id = p.id_int AND r.price > 0), CAST(p.price AS DOUBLE), 0.0) AS min_price, '
-        'COALESCE((SELECT MAX(r.price) FROM rooms r WHERE r.property_id = p.id_int AND r.price > 0), CAST(p.price AS DOUBLE), 0.0) AS max_price, '
-        '(SELECT COUNT(*) FROM rooms r WHERE r.property_id = p.id_int AND r.is_all_inclusive = 1) > 0 AS has_all_inclusive '
-        'FROM properties p'
+        'COALESCE(MIN(CASE WHEN r.price > 0 THEN r.price ELSE NULL END), CAST(p.price AS DOUBLE), 0.0) AS min_price, '
+        'COALESCE(MAX(CASE WHEN r.price > 0 THEN r.price ELSE NULL END), CAST(p.price AS DOUBLE), 0.0) AS max_price, '
+        'COALESCE(SUM(CASE WHEN r.is_all_inclusive = 1 THEN 1 ELSE 0 END), 0) > 0 AS has_all_inclusive '
+        'FROM properties p '
+        'LEFT JOIN rooms r ON r.property_id = p.id_int '
+        'GROUP BY p.id'
       );
       final list = <PropertyEntity>[];
       for (var row in results.rows) {

@@ -14,30 +14,42 @@ final landlordRepositoryProvider = Provider<LandlordRepository>((ref) {
   return LandlordRepository(mysqlService);
 });
 
-final landlordProvider = FutureProvider<LandlordStatsModel>((ref) async {
+// Single combined dashboard data provider to execute all queries inside 1 database connection
+final landlordDashboardProvider = FutureProvider<LandlordDashboardData>((ref) async {
   final repository = ref.watch(landlordRepositoryProvider);
   final authState = ref.watch(authProvider);
-  final ownerId = authState.user?.id ?? 2; // Default to 2 (Landlord Kosmo) if not logged in
-  return repository.getStats(ownerId);
+  final landlordId = authState.user?.id ?? 2; // Default to 2 if not logged in
+  return repository.getDashboardData(landlordId);
+});
+
+final landlordProvider = FutureProvider<LandlordStatsModel>((ref) async {
+  ref.onDispose(() {
+    ref.invalidate(landlordDashboardProvider);
+  });
+  final dashboard = await ref.watch(landlordDashboardProvider.future);
+  return dashboard.stats;
 });
 
 final landlordTenantsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final repository = ref.watch(landlordRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final landlordId = authState.user?.id ?? 2;
-  return repository.getTenantsForLandlord(landlordId);
+  ref.onDispose(() {
+    ref.invalidate(landlordDashboardProvider);
+  });
+  final dashboard = await ref.watch(landlordDashboardProvider.future);
+  return dashboard.tenants;
 });
 
 final landlordReviewsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final propRepository = ref.watch(propertyRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final landlordId = authState.user?.id ?? 2;
-  return propRepository.getReviewsForLandlordProperties(landlordId);
+  ref.onDispose(() {
+    ref.invalidate(landlordDashboardProvider);
+  });
+  final dashboard = await ref.watch(landlordDashboardProvider.future);
+  return dashboard.reviews;
 });
 
 final landlordTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) async {
-  final txRepository = ref.watch(transactionRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final landlordId = authState.user?.id ?? 2;
-  return txRepository.getReceivedPaymentsForLandlord(landlordId);
+  ref.onDispose(() {
+    ref.invalidate(landlordDashboardProvider);
+  });
+  final dashboard = await ref.watch(landlordDashboardProvider.future);
+  return dashboard.transactions;
 });
