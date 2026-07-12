@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+
+// Global cache for decoded Base64 image bytes to prevent redundant CPU-heavy decoding on rebuilds/scrolling
+final Map<String, Uint8List> _base64Cache = {};
 
 class CustomImage extends StatelessWidget {
   final String imageUrl;
@@ -25,8 +29,12 @@ class CustomImage extends StatelessWidget {
     
     if (imageUrl.startsWith('data:')) {
       try {
-        final base64String = imageUrl.split(',').last;
-        final bytes = base64Decode(base64String.trim());
+        Uint8List? bytes = _base64Cache[imageUrl];
+        if (bytes == null) {
+          final base64String = imageUrl.split(',').last;
+          bytes = base64Decode(base64String.trim());
+          _base64Cache[imageUrl] = bytes;
+        }
         return Image.memory(
           bytes,
           fit: fit,

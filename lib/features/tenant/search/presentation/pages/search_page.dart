@@ -83,9 +83,12 @@ class _SearchPageState extends ConsumerState<SearchPage>
     _listScrollController = ScrollController();
     _listScrollController.addListener(() {
       if (_listScrollController.position.pixels >= _listScrollController.position.maxScrollExtent - 100) {
-        setState(() {
-          _visibleCount += 10;
-        });
+        final totalCount = ref.read(searchProvider).value?.length ?? 0;
+        if (_visibleCount < totalCount) {
+          setState(() {
+            _visibleCount += 10;
+          });
+        }
       }
     });
 
