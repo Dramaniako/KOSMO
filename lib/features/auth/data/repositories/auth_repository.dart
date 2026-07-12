@@ -71,10 +71,12 @@ class AuthRepository {
 
       // 2. Hash password and insert
       final passwordHash = _hashPassword(password);
+      final userIdStr = 'user-${DateTime.now().millisecondsSinceEpoch}';
       final result = await conn.execute(
-        "INSERT INTO users (name, email, password, is_verified, role) "
-        "VALUES (:name, :email, :password, 0, 'tenant')",
+        "INSERT INTO users (id, name, email, password, is_verified, role) "
+        "VALUES (:id, :name, :email, :password, 0, 'tenant')",
         {
+          'id': userIdStr,
           'name': name,
           'email': email,
           'password': passwordHash,

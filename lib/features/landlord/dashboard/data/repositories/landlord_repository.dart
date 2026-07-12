@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:bcrypt/bcrypt.dart';
 import '../../../../../core/services/mysql_service.dart';
 import '../../../../tenant/search/data/models/room_model.dart';
 import '../models/landlord_property_model.dart';
@@ -111,10 +112,12 @@ class LandlordRepository {
   }) async {
     return _mysqlService.run((conn) async {
       // 1. Insert the property (without price & billing)
+      final propIdStr = 'prop-${DateTime.now().millisecondsSinceEpoch}';
       final result = await conn.execute(
-        "INSERT INTO properties (owner_id_int, name, address, district, rating, latitude, longitude, totalRooms, occupiedRooms, image, description) "
-        "VALUES (:owner_id, :title, :address, :location, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :description)",
+        "INSERT INTO properties (id, owner_id_int, name, address, district, rating, latitude, longitude, totalRooms, occupiedRooms, image, description) "
+        "VALUES (:id, :owner_id, :title, :address, :location, :rating, :latitude, :longitude, :total_rooms, :occupied_rooms, :image_url, :description)",
         {
+          'id': propIdStr,
           'owner_id': ownerId,
           'title': title,
           'address': address,
@@ -370,6 +373,16 @@ class LandlordRepository {
 
       final storedHash = results.rows.first.colByName('password') ?? '';
       final inputHash = sha256.convert(utf8.encode(password)).toString();
+
+      if (storedHash.startsWith('\$2a\$') || 
+          storedHash.startsWith('\$2b\$') || 
+          storedHash.startsWith('\$2y\$')) {
+        try {
+          return BCrypt.checkpw(password, storedHash);
+        } catch (_) {
+          return false;
+        }
+      }
       return storedHash == inputHash || storedHash == password;
     });
   }
@@ -417,6 +430,13 @@ class LandlordRepository {
     required String accountNumber,
   }) async {
     return _mysqlService.run((conn) async {
+      final userRes = await conn.execute(
+        'SELECT id FROM users WHERE id_int = :landlordId LIMIT 1',
+        {'landlordId': landlordId},
+      );
+      if (userRes.rows.isEmpty) return false;
+      final userIdStr = userRes.rows.first.colByName('id') ?? '';
+
       final now = DateTime.now();
       // Format date in Indonesian style, e.g. "4 Jun 2026"
       final months = [
@@ -425,16 +445,19 @@ class LandlordRepository {
       ];
       final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
       
+      final withdrawalId = 'w-${DateTime.now().millisecondsSinceEpoch}';
       final result = await conn.execute(
-        'INSERT INTO withdrawals (landlord_id_int, amount, bankName, accountNumber, date, status) '
-        'VALUES (:landlordId, :amount, :bankName, :accountNumber, :dateStr, :status)',
+        'INSERT INTO withdrawals (id, userId, landlord_id_int, amount, bankName, accountNumber, date, status) '
+        'VALUES (:id, :userId, :landlordId, :amount, :bankName, :accountNumber, :dateStr, :status)',
         {
+          'id': withdrawalId,
+          'userId': userIdStr,
           'landlordId': landlordId,
           'amount': amount,
           'bankName': bankName,
           'accountNumber': accountNumber,
           'dateStr': dateStr,
-          'status': 'success',
+          'status': 'Selesai',
         },
       );
       return result.affectedRows > BigInt.zero;

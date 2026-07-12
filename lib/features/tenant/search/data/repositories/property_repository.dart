@@ -45,6 +45,22 @@ class PropertyRepository {
     required String comment,
   }) async {
     return _mysqlService.run((conn) async {
+      final propRes = await conn.execute(
+        'SELECT id, name FROM properties WHERE id_int = :propertyId LIMIT 1',
+        {'propertyId': propertyId},
+      );
+      if (propRes.rows.isEmpty) return false;
+      final propIdStr = propRes.rows.first.colByName('id') ?? '';
+      final propName = propRes.rows.first.colByName('name') ?? '';
+
+      final userRes = await conn.execute(
+        'SELECT id, name FROM users WHERE id_int = :userId LIMIT 1',
+        {'userId': userId},
+      );
+      if (userRes.rows.isEmpty) return false;
+      final userIdStr = userRes.rows.first.colByName('id') ?? '';
+      final userName = userRes.rows.first.colByName('name') ?? '';
+
       final now = DateTime.now();
       final months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -52,15 +68,21 @@ class PropertyRepository {
       ];
       final dateStr = '${now.day} ${months[now.month - 1]} ${now.year}';
 
+      final reviewId = 'rev-${DateTime.now().millisecondsSinceEpoch}';
       final insertResult = await conn.execute(
-        'INSERT INTO reviews (property_id_int, user_id_int, rating, comment, date) '
-        'VALUES (:propertyId, :userId, :rating, :comment, :dateStr)',
+        'INSERT INTO reviews (id, propertyId, propertyName, userId, userName, rating, comment, date, property_id_int, user_id_int) '
+        'VALUES (:id, :propertyIdStr, :propertyName, :userIdStr, :userName, :rating, :comment, :dateStr, :propertyId, :userId)',
         {
-          'propertyId': propertyId,
-          'userId': userId,
+          'id': reviewId,
+          'propertyIdStr': propIdStr,
+          'propertyName': propName,
+          'userIdStr': userIdStr,
+          'userName': userName,
           'rating': rating,
           'comment': comment,
           'dateStr': dateStr,
+          'propertyId': propertyId,
+          'userId': userId,
         },
       );
 
