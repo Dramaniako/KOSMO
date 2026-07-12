@@ -3,10 +3,11 @@ import 'package:crypto/crypto.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../../../../../core/services/mysql_service.dart';
 import '../../../../tenant/search/data/models/room_model.dart';
-import 'landlord_property_model.dart';
+import '../models/landlord_property_model.dart';
 import '../models/landlord_stats_model.dart';
 import '../models/withdrawal_model.dart';
 import '../../../../tenant/dashboard/data/models/transaction_model.dart';
+import '../../../../tenant/dashboard/presentation/widgets/transaction_card.dart';
 
 class LandlordRepository {
   final MySqlService _mysqlService;
